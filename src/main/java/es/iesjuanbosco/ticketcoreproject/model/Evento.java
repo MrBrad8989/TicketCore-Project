@@ -1,0 +1,30 @@
+package es.iesjuanbosco.ticketcoreproject.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Data
+public class Evento {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String titulo;
+    private LocalDateTime fechaEvento; // OBLIGATORIO: No usar Date
+    private Double precio;
+
+    @ManyToOne
+    @JoinColumn(name = "recinto_id")
+    private Recinto recinto;
+
+    @ManyToMany
+    @JoinTable(
+            name = "evento_artista",
+            joinColumns = @JoinColumn(name = "evento_id"),
+            inverseJoinColumns = @JoinColumn(name = "artista_id")
+    )
+    private List<Artista> artistas;
+}
