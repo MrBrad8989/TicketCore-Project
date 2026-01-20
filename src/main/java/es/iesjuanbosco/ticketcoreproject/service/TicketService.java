@@ -9,8 +9,6 @@ import es.iesjuanbosco.ticketcoreproject.model.Usuario;
 import es.iesjuanbosco.ticketcoreproject.repository.EventoRepo;
 import es.iesjuanbosco.ticketcoreproject.repository.TicketRepo;
 import es.iesjuanbosco.ticketcoreproject.repository.UsuarioRepo;
-
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,20 +27,21 @@ public class TicketService {
 
     @Autowired
     private UsuarioRepo usuarioRepository;
+
     @Autowired
-    private TicketMapper ticketMapper;
+    private TicketMapper ticketMapper; // Inyección de MapStruct
 
     @Transactional
     public TicketDTO comprarTicket(Long usuarioId, Long eventoId) {
 
-        // 1. Recuperar las entidades (o lanzar error si no existen)
+        // 1. Recuperar entidades
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Evento evento = eventoRepository.findById(eventoId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
-        // Contamos cuántos tickets se han vendido para este evento
+        // 2. Validar aforo
         long entradasVendidas = ticketRepository.countByEventoId(eventoId);
         int aforoMaximo = evento.getRecinto().getAforoMaximo();
 
@@ -50,17 +49,17 @@ public class TicketService {
             throw new SoldOutException("Lo sentimos, no quedan entradas para el evento: " + evento.getTitulo());
         }
 
-        // 3. Crear el Ticket (Entidad Transaccional)
+        // 3. Crear Ticket
         Ticket ticket = new Ticket();
         ticket.setUsuario(usuario);
         ticket.setEvento(evento);
         ticket.setFechaCompra(LocalDateTime.now());
-        ticket.setCodigo(UUID.randomUUID().toString()); // Aleatorio
+        ticket.setCodigo(UUID.randomUUID().toString());
 
-        // 4. Guardar en Base de Datos
+        // 4. Guardar
         Ticket ticketGuardado = ticketRepository.save(ticket);
 
-        // 5. Convertir a DTO y devolver
+        // 5. Convertir con MapStruct
         return ticketMapper.toDTO(ticketGuardado);
     }
 }

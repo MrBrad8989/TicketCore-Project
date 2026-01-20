@@ -7,6 +7,7 @@ import es.iesjuanbosco.ticketcoreproject.mapper.EventoMapper;
 import es.iesjuanbosco.ticketcoreproject.model.Artista;
 import es.iesjuanbosco.ticketcoreproject.model.Evento;
 import es.iesjuanbosco.ticketcoreproject.model.Recinto;
+import es.iesjuanbosco.ticketcoreproject.repository.ArtistaRepo;
 import es.iesjuanbosco.ticketcoreproject.repository.EventoRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,12 +30,21 @@ public class EventoController {
     private EventoRepo eventoRepository;
     @Autowired
     private EventoMapper eventoMapper;
+    @Autowired
+    private ArtistaRepo artistaRepository;
 
-    // GET http://localhost:8080/api/eventos/buscar?ciudad=Madrid&page=0&size=5
+    // GET http://localhost:8080/api/eventos/generos
+    @GetMapping("/generos")
+    public ResponseEntity<List<String>> obtenerGeneros() {
+        return ResponseEntity.ok(artistaRepository.findGenerosEspecificos());
+    }
+
+    // GET http://localhost:8080/api/eventos/buscar?ciudad=Madrid&keyword=rock&fechaInicio=2024-07-01T00:00:00&page=0&size=9
     @GetMapping("/buscar")
     public ResponseEntity<Page<EventoDTO>> buscarEventos(
             @RequestParam String ciudad,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String genero,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @PageableDefault(size = 9, page = 0) Pageable pageable) {
@@ -44,8 +54,9 @@ public class EventoController {
             fechaInicio = LocalDateTime.now();
         }
 
+
         // Ejecuto la consulta avanzada del repositorio
-        Page<Evento> resultados = eventoRepository.buscarEventosAvanzado(ciudad, fechaInicio, keyword, pageable);
+        Page<Evento> resultados = eventoRepository.buscarEventosAvanzado(ciudad, fechaInicio, keyword, genero, pageable);
 
         // Mapeo la página de entidades a página de DTOs
         Page<EventoDTO> pageDTO = resultados.map(eventoMapper::toDTO);

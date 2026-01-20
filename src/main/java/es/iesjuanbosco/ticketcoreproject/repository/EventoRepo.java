@@ -14,13 +14,17 @@ import java.time.LocalDateTime;
 public interface EventoRepo extends JpaRepository<Evento, Long> {
 
     // Búsqueda avanzada con filtros opcionales
-    @Query("SELECT e FROM Evento e WHERE e.recinto.ciudad = :ciudad " +
+    @Query("SELECT DISTINCT e FROM Evento e " +
+            "LEFT JOIN e.artistas a " +
+            "WHERE e.recinto.ciudad = :ciudad " +
             "AND e.fechaEvento >= :fecha " +
-            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:genero IS NULL OR :genero = '' OR LOWER(a.genero) = LOWER(:genero))")
     Page<Evento> buscarEventosAvanzado(
             @Param("ciudad") String ciudad,
             @Param("fecha") LocalDateTime fecha,
             @Param("keyword") String keyword,
+            @Param("genero") String genero,
             Pageable pageable
     );
 
