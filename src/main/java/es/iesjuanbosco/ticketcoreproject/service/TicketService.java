@@ -2,6 +2,7 @@ package es.iesjuanbosco.ticketcoreproject.service;
 
 import es.iesjuanbosco.ticketcoreproject.dto.TicketDTO;
 import es.iesjuanbosco.ticketcoreproject.exception.SoldOutException;
+import es.iesjuanbosco.ticketcoreproject.mapper.TicketMapper;
 import es.iesjuanbosco.ticketcoreproject.model.Evento;
 import es.iesjuanbosco.ticketcoreproject.model.Ticket;
 import es.iesjuanbosco.ticketcoreproject.model.Usuario;
@@ -28,6 +29,8 @@ public class TicketService {
 
     @Autowired
     private UsuarioRepo usuarioRepository;
+    @Autowired
+    private TicketMapper ticketMapper;
 
     @Transactional
     public TicketDTO comprarTicket(Long usuarioId, Long eventoId) {
@@ -57,18 +60,7 @@ public class TicketService {
         // 4. Guardar en Base de Datos
         Ticket ticketGuardado = ticketRepository.save(ticket);
 
-        // 5. Convertir a DTO para devolver al controlador
-        return convertirADTO(ticketGuardado);
-    }
-
-    // Mapper de Entidad a DTO
-    private TicketDTO convertirADTO(Ticket ticket) {
-        TicketDTO dto = new TicketDTO();
-        dto.setId(ticket.getId());
-        dto.setCodigo(ticket.getCodigo());
-        dto.setFechaCompra(ticket.getFechaCompra());
-        dto.setTituloEvento(ticket.getEvento().getTitulo());
-        dto.setNombreUsuario(ticket.getUsuario().getNombre());
-        return dto;
+        // 5. Convertir a DTO y devolver
+        return ticketMapper.toDTO(ticketGuardado);
     }
 }
