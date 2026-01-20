@@ -13,8 +13,13 @@ public class Evento {
     private Long id;
 
     private String titulo;
-    private LocalDateTime fechaEvento; // OBLIGATORIO: No usar Date
+    private LocalDateTime fechaEvento;
     private Double precio;
+
+    @Column(unique = true)
+    private String ticketmasterId;
+
+    private String imageUrl;
 
     @ManyToOne
     @JoinColumn(name = "recinto_id")

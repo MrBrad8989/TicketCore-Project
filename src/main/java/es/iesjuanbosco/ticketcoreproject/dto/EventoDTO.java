@@ -10,8 +10,9 @@ public class EventoDTO {
     private String titulo;
     private LocalDateTime fechaEvento;
     private Double precio;
+    private String imageUrl;
 
-    // Relaciones mostradas como DTOs planos
+    // Relaciones mostradas como DTOs
     private RecintoDTO recinto;
     private List<ArtistaDTO> artistas;
 }

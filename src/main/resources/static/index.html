@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicketCore - Eventos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+            border-radius: 0 0 20px 20px;
+        }
+        .card-img-top {
+            height: 200px;
+            object-fit: cover; /* Para que la imagen no se deforme */
+        }
+        .card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card:hover { transform: translateY(-5px); }
+        .price-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-ticket-perforated"></i> TicketCore</h1>
+        <p class="lead">Descubre los mejores conciertos en tu ciudad</p>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="keyword" class="form-control" placeholder="Buscar artista o evento...">
+                    <input type="date" id="fecha" class="form-control" style="max-width: 180px;">
+                    <button class="btn btn-light text-primary fw-bold" onclick="cargarEventos()">Buscar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <h4 class="mb-3 text-secondary" id="titulo-resultados">Próximos eventos en Madrid</h4>
+
+    <div id="eventos-container" class="row g-4">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Cargando eventos...</p>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <button id="btn-prev" class="btn btn-outline-primary" onclick="cambiarPagina(-1)" disabled>Anterior</button>
+        <span id="page-info" class="align-self-center text-muted">Página 1</span>
+        <button id="btn-next" class="btn btn-outline-primary" onclick="cambiarPagina(1)">Siguiente</button>
+    </div>
+</div>
+
+<div class="modal fade" id="compraModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitulo">Titulo Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>📍 <strong>Recinto:</strong> <span id="modalRecinto"></span></p>
+                <p>📅 <strong>Fecha:</strong> <span id="modalFecha"></span></p>
+                <p>💰 <strong>Precio:</strong> <span id="modalPrecio" class="text-success fw-bold"></span></p>
+                <hr>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Aquí iría la pasarela de pago real.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarCompra()">Confirmar Compra</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let paginaActual = 0;
+    const tamanoPagina = 9;
+    let totalPaginas = 0;
+
+    // Cargar eventos al iniciar
+    document.addEventListener("DOMContentLoaded", () => cargarEventos());
+
+    async function cargarEventos() {
+        const container = document.getElementById('eventos-container');
+        const keyword = document.getElementById('keyword').value;
+        const fechaInput = document.getElementById('fecha').value;
+
+        // Construir URL con filtros
+        let url = `/api/eventos/buscar?ciudad=Madrid&page=${paginaActual}&size=${tamanoPagina}`;
+        if(keyword) url += `&keyword=${keyword}`;
+        if(fechaInput) url += `&fechaInicio=${fechaInput}T00:00:00`; // Formato ISO
+
+        container.innerHTML = '<div class="text-center col-12"><div class="spinner-border text-primary"></div></div>';
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Error en la red");
+
+            const data = await response.json();
+            const lista = data.content || [];
+            totalPaginas = data.page ? data.page.totalPages : (data.totalPages || 0);
+
+            container.innerHTML = ''; // Limpiar
+
+            if (lista.length === 0) {
+                container.innerHTML = `<div class="col-12 text-center text-muted"><h3>😕 No se encontraron eventos.</h3><p>Prueba con otra fecha o nombre.</p></div>`;
+                return;
+            }
+
+            lista.forEach(evento => {
+                // Lógica de PRECIOS: Si es 0 o null, mostramos "A consultar"
+                let precioDisplay = "A consultar";
+                if (evento.precio && evento.precio > 0) {
+                    precioDisplay = evento.precio.toFixed(2) + " €";
+                }
+
+                // Imagen por defecto si falla
+                const imgUrl = evento.imageUrl || 'https://via.placeholder.com/400x200?text=No+Image';
+                const fecha = new Date(evento.fechaEvento).toLocaleDateString("es-ES", { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'});
+                const recinto = evento.recinto ? evento.recinto.nombre : 'Recinto desconocido';
+
+                // HTML de la Tarjeta
+                const card = `
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div style="position:relative;">
+                                <img src="${imgUrl}" class="card-img-top" alt="${evento.titulo}">
+                                <span class="price-badge">${precioDisplay}</span>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-truncate" title="${evento.titulo}">${evento.titulo}</h5>
+                                <p class="card-text text-muted small mb-2"><i class="bi bi-geo-alt-fill"></i> ${recinto}</p>
+                                <p class="card-text text-primary mb-3"><i class="bi bi-calendar-event"></i> ${fecha}</p>
+
+                                <button class="btn btn-outline-primary mt-auto w-100"
+                                    onclick="abrirModal('${evento.titulo.replace(/'/g, "\\'")}', '${recinto.replace(/'/g, "\\'")}', '${fecha}', '${precioDisplay}', ${evento.id})">
+                                    Ver Entradas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+
+            actualizarBotonesPaginacion();
+
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<div class="alert alert-danger col-12">Error cargando eventos. Asegúrate de que el Backend está corriendo.</div>';
+        }
+    }
+
+    function cambiarPagina(delta) {
+        paginaActual += delta;
+        cargarEventos();
+    }
+
+    function actualizarBotonesPaginacion() {
+        document.getElementById('page-info').innerText = `Página ${paginaActual + 1} de ${totalPaginas}`;
+        document.getElementById('btn-prev').disabled = paginaActual === 0;
+        document.getElementById('btn-next').disabled = paginaActual >= totalPaginas - 1;
+    }
+
+    // Funciones del Modal
+    let eventoIdSeleccionado = null;
+
+    function abrirModal(titulo, recinto, fecha, precio, id) {
+        document.getElementById('modalTitulo').innerText = titulo;
+        document.getElementById('modalRecinto').innerText = recinto;
+        document.getElementById('modalFecha').innerText = fecha;
+        document.getElementById('modalPrecio').innerText = precio;
+        eventoIdSeleccionado = id;
+
+        // Abrir modal usando Bootstrap API
+        new bootstrap.Modal(document.getElementById('compraModal')).show();
+    }
+
+    function confirmarCompra() {
+        if(eventoIdSeleccionado) {
+            // Aquí llamarías a tu API POST /api/tickets/comprar
+            alert("¡Simulación de compra exitosa para el ID: " + eventoIdSeleccionado + "!");
+            // Cerrar modal manualmente si es necesario
+        }
+    }
+</script>
+
+</body>
+</html>
