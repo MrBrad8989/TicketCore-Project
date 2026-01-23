@@ -69,4 +69,20 @@ El sistema aplica las siguientes reglas lógicas en sus servicios y repositorios
 * **Backend:** Java 17, Spring Boot (Web, Data JPA, Validation).
 * **Base de Datos:** MySQL 8.0 (Contenerizada en Docker).
 * **Mapeo:** MapStruct (para conversión eficiente Entity <-> DTO).
-* **Cliente
+* **Cliente HTTP:** RestTemplate (para consumo de API Ticketmaster).
+* **Frontend:** HTML5, CSS3, Bootstrap 5, JavaScript Vanilla.
+* **Herramientas:** Maven, Lombok, Docker Compose.
+
+---
+
+## ⚙️ Instalación y Despliegue
+
+### Prerrequisitos
+* Java 17 JDK
+* Maven
+* Docker y Docker Compose
+
+### 1. Clonar el repositorio
+```bash
+git clone [https://github.com/tu-usuario/TicketCore-Project.git](https://github.com/tu-usuario/TicketCore-Project.git)
+cd TicketCore-Project
