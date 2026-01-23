@@ -10,5 +10,6 @@ public interface TicketMapper {
     // Mapeo personalizado para campos con nombres diferentes
     @Mapping(source = "evento.titulo", target = "tituloEvento")
     @Mapping(source = "usuario.nombre", target = "nombreUsuario")
+    @Mapping(source = "fechaCompra", target = "fechaCompra", dateFormat = "dd/MM/yyyy HH:mm")
     TicketDTO toDTO(Ticket ticket);
 }

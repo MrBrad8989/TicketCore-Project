@@ -128,9 +128,18 @@ public class TicketmasterSyncService {
                 if (artistaOpt.isPresent()) {
                     artista = artistaOpt.get();
                 } else {
+                    String genero = "General";
+                    JsonNode classifications = att.path("classifications");
+                    // Intentar obtener género si está definido
+                    if (classifications.isArray() && classifications.size() > 0) {
+                        JsonNode genreNode = classifications.get(0).path("genre").path("name");
+                        if (!genreNode.isMissingNode() && !genreNode.asText().equalsIgnoreCase("Undefined")) {
+                            genero = genreNode.asText();
+                        }
+                    }
                     artista = new Artista();
                     artista.setNombre(nombreArtista);
-                    artista.setGenero("General");
+                    artista.setGenero(genero);
                     artista = artistaRepo.save(artista);
                 }
                 artistasEvento.add(artista);

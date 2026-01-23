@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class TicketDTO {
     private Long id;
     private String codigo;
-    private LocalDateTime fechaCompra;
+    private String fechaCompra;
 
     private String tituloEvento;
     private String nombreUsuario;

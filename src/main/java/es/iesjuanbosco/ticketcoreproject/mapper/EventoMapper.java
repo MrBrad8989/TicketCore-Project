@@ -11,12 +11,12 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface EventoMapper {
 
-    // MapStruct detecta automáticamente los campos con el mismo nombre
+    // Mapstruct detecta automáticamente los campos con el mismo nombre
     EventoDTO toDTO(Evento evento);
 
     Evento toEntity(EventoDTO eventoDTO);
 
-    // Mapeos para las sub-entidades
+    // Mapeos para las subentidades
     RecintoDTO toRecintoDTO(Recinto recinto);
     ArtistaDTO toArtistaDTO(Artista artista);
 }
