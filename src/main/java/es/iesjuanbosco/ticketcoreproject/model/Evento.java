@@ -2,11 +2,15 @@ package es.iesjuanbosco.ticketcoreproject.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 public class Evento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

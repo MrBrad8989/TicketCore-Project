@@ -5,7 +5,6 @@ import es.iesjuanbosco.ticketcoreproject.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Optional;
 
 @Service
@@ -16,7 +15,6 @@ public class CarritoService {
     @Autowired private UsuarioRepo usuarioRepo;
 
     public Carrito obtenerCarrito(Long usuarioId) {
-
         return carritoRepo.findByUsuarioId(usuarioId)
                 .orElseGet(() -> {
                     Usuario usuario = usuarioRepo.findById(usuarioId)
@@ -33,7 +31,6 @@ public class CarritoService {
         Evento evento = eventoRepo.findById(eventoId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
-        // Buscar si ya existe el evento en el carrito para sumar cantidad
         Optional<LineaCarrito> lineaExistente = carrito.getLineas().stream()
                 .filter(l -> l.getEvento().getId().equals(eventoId))
                 .findFirst();

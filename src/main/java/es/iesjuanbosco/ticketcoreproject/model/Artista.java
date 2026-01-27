@@ -1,11 +1,16 @@
 package es.iesjuanbosco.ticketcoreproject.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 public class Artista {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,5 +20,6 @@ public class Artista {
     private String genero;
 
     @ManyToMany(mappedBy = "artistas")
+    @JsonIgnore
     private List<Evento> eventos;
 }
