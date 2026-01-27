@@ -38,7 +38,7 @@
 
 A continuación se muestra el esquema visual de la base de datos:
 
-![Diagrama Entidad-Relación](https://i.imgur.com/oGYLKit.png)
+![Diagrama Entidad-Relación](https://i.imgur.com/YIEcW3l.png)
 
 ### Entidades Principales
 | Entidad | Descripción |
