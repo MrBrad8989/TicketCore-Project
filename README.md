@@ -1,77 +1,84 @@
 # 🎫 TicketCore Project
 
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.0-green.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.1-green.svg)](https://spring.io/projects/spring-boot)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Swagger](https://img.shields.io/badge/Swagger-OpenAPI_3-85EA2D.svg)](http://localhost:8080/swagger-ui/index.html)
 
-**TicketCore** es una plataforma completa de gestión y venta de entradas para eventos musicales. El sistema sincroniza eventos reales desde la API de Ticketmaster, permite búsquedas avanzadas y simula un proceso de compra de entradas con control de aforo en tiempo real.
+**TicketCore** es una plataforma integral de gestión y venta de entradas para eventos musicales. El sistema no solo sincroniza eventos reales desde la API de Ticketmaster, sino que implementa un flujo completo de comercio electrónico con **carrito de compra**, autenticación de usuarios y un panel de administración para la gestión de contenido.
 
 ---
 
 ## 🚀 Características Principales
 
-* **Sincronización Externa:** Integración con la API de Ticketmaster para importar eventos, recintos y artistas de una ciudad específica (por defecto Madrid).
-* **Gestión de Eventos:** Visualización de conciertos con imágenes, precios y ubicaciones.
-* **Búsqueda Avanzada:** Filtrado de eventos por ciudad, palabra clave y fecha.
-* **Sistema de Venta:** Compra de tickets transaccional con control de concurrencia y validación de *Sold Out*.
-* **Arquitectura Limpia:** Uso de DTOs, Mappers (MapStruct) y separación de capas (Controller, Service, Repository).
-* **Frontend Integrado:** Interfaz web responsive construida con HTML5, Bootstrap 5 y consumo de API via Fetch.
+### 🛍️ Experiencia de Usuario (E-Commerce)
+* **Carrito de Compra Persistente:** Los usuarios pueden añadir múltiples eventos al carrito, modificar cantidades y procesar un pedido conjunto (`Carrito` -> `LineaCarrito`).
+* **Checkout Transaccional:** Conversión atómica de los ítems del carrito en `Tickets` reales, validando stock en el último momento.
+* **Búsqueda Inteligente:**
+  * Filtrado por ciudad, palabra clave, género y fecha.
+  * **Modo Descubrimiento:** Si no se selecciona ciudad, el sistema sugiere eventos de forma aleatoria (`ORDER BY RAND()`).
+* **Autenticación:** Sistema de Login y Registro de usuarios.
+
+### ⚙️ Gestión y Administración
+* **Panel de Administración:** Los usuarios con rol `ADMIN` tienen acceso a controles exclusivos en el frontend para:
+  * Crear eventos manualmente.
+  * Editar detalles de eventos (precios, fechas, imágenes).
+  * Borrar eventos del sistema.
+* **Sincronización Externa:** Integración con la API de Ticketmaster para importar masivamente eventos, recintos y artistas, evitando duplicados.
+
+### 💻 Frontend Integrado
+* Interfaz SPA (Single Page Application) construida con **HTML5, Bootstrap 5 y JavaScript Vanilla**.
+* Consumo de API mediante `Fetch API`.
+* Modales dinámicos para detalles de eventos, carrito de compra y formularios de login.
 
 ---
 
 ## 🏛️ Modelo de Dominio y Datos
 
-A continuación se muestra el esquema visual de la base de datos:
-
-![Diagrama Entidad-Relación](https://i.imgur.com/oGYLKit.png)
-
-### Relaciones Clave
-* **Recinto (1) ↔ (N) Evento:** Un recinto alberga múltiples eventos, pero un evento pertenece a un único recinto.
-* **Evento (M) ↔ (N) Artista:** Relación "Many-to-Many" gestionada mediante tabla intermedia. Un evento puede tener varios artistas (teloneros, festivales) y un artista actúa en múltiples eventos.
-* **Usuario (1) ↔ (N) Ticket:** Un usuario registrado puede adquirir múltiples entradas.
-* **Evento (1) ↔ (N) Ticket:** Control de inventario y aforo mediante la relación de tickets vendidos por evento.
+El sistema utiliza una base de datos relacional MySQL optimizada.
 
 ### Entidades Principales
 | Entidad | Descripción |
 | :--- | :--- |
-| **Evento** | Núcleo del sistema. Contiene título, fecha, precio, imagen y *ticketmasterId* para evitar duplicados. |
-| **Recinto** | Lugar físico del evento. Incluye ciudad y **aforo máximo** (crítico para la lógica de venta). |
-| **Ticket** | Representa la compra. Incluye un **UUID único** y fecha de transacción exacta. |
-| **Usuario** | Cliente de la plataforma identificado por email único. |
+| **Usuario** | Clientes de la plataforma. Incluye gestión de roles (`USER`, `ADMIN`) y credenciales. |
+| **Carrito** | Vinculado 1:1 al usuario. Contiene múltiples líneas de pedido (`LineaCarrito`) antes de la compra. |
+| **Evento** | Núcleo del sistema. Contiene título, precio, imagen y *ticketmasterId* para control de duplicados. |
+| **Recinto** | Lugar físico. Controla la ciudad y el **aforo máximo** crítico para evitar *overbooking*. |
+| **Ticket** | Representa la entrada final generada tras el checkout. Incluye un **UUID único**. |
+| **Artista** | Relación N:M con Eventos. Permite categorizar por género musical. |
 
 ---
 
 ## 📋 Reglas de Negocio Implementadas
 
-El sistema aplica las siguientes reglas lógicas en sus servicios y repositorios:
+### 1. Flujo de Compra (Carrito -> Ticket)
+El proceso de compra no es directo, sino que pasa por un estado intermedio:
+1.  **Agregar:** Se crea o actualiza una `LineaCarrito`.
+2.  **Checkout:** El servicio `finalizarCompra`:
+  * Recorre las líneas del carrito.
+  * Verifica el aforo disponible por evento.
+  * Genera `N` entidades `Ticket` según la cantidad solicitada.
+  * Vacia el carrito tras el éxito.
+  * Todo bajo una transacción (`@Transactional`) para asegurar la integridad.
 
-### 1. Gestión de Ventas y Aforo
-* **Control de Sold Out:** Antes de generar un ticket, el sistema consulta el conteo de entradas vendidas (`countByEventoId`). Si `vendidas >= aforoMaximo` del recinto, se bloquea la transacción lanzando una `SoldOutException` (HTTP 400).
-* **Identificador Único:** Cada ticket generado recibe un código UUID v4 para garantizar su unicidad universal.
-* **Validación:** No se permite la compra si el usuario o el evento no existen en la base de datos.
+### 2. Control de Aforo (Sold Out)
+Antes de generar cualquier ticket, se consulta `countByEventoId`. Si `entradas_vendidas >= aforo_recinto`, se lanza una excepción personalizada `SoldOutException` (HTTP 400), bloqueando la compra.
 
-### 2. Sincronización con Ticketmaster
-* **Unicidad:** Se evita la duplicidad de eventos verificando el `ticketmasterId` antes de insertar.
-* **Persistencia Inteligente:**
-    * Si un **Recinto** importado ya existe (por nombre), se reutiliza; si no, se crea con un aforo por defecto (5,000 pax).
-    * Si un **Artista** ya existe, se reutiliza; si no, se crea (asignando género "General" si la API no lo provee).
-* **Datos por Defecto:** Si la API externa no provee fecha, se asigna "Hoy + 15 días" para asegurar visibilidad. Precios nulos se convierten a 0.0.
-
-### 3. Búsqueda y Filtrado
-* **Histórico:** Por defecto, las búsquedas excluyen eventos pasados (`fechaEvento >= LocalDateTime.now()`).
-* **Filtros Dinámicos:** Permite combinaciones opcionales de ciudad, palabra clave (título) y género musical.
+### 3. Sincronización Inteligente
+* **Persistencia de Relaciones:** Al importar de Ticketmaster, el sistema detecta si el **Recinto** o el **Artista** ya existen en base de datos (por nombre) para reutilizarlos y no duplicar registros.
+* **Datos por Defecto:** Si la API externa no provee precios o fechas, el sistema asigna valores lógicos por defecto (ej. fecha actual + 15 días) para mantener la consistencia.
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
-* **Backend:** Java 17, Spring Boot (Web, Data JPA, Validation).
-* **Base de Datos:** MySQL 8.0 (Contenerizada en Docker).
-* **Mapeo:** MapStruct (para conversión eficiente Entity <-> DTO).
-* **Cliente HTTP:** RestTemplate (para consumo de API Ticketmaster).
-* **Frontend:** HTML5, CSS3, Bootstrap 5, JavaScript Vanilla.
-* **Herramientas:** Maven, Lombok, Docker Compose.
+* **Backend:** Java 17, Spring Boot 3.4.1.
+* **Datos:** Spring Data JPA, MySQL 8.0 (Docker), Hibernate.
+* **API Doc:** SpringDoc OpenAPI (Swagger UI).
+* **Mapeo:** MapStruct (Entity <-> DTO).
+* **Seguridad:** Gestión de usuarios y roles propia.
+* **Frontend:** HTML5, CSS3, Bootstrap 5, JS.
 
 ---
 
@@ -80,9 +87,9 @@ El sistema aplica las siguientes reglas lógicas en sus servicios y repositorios
 ### Prerrequisitos
 * Java 17 JDK
 * Maven
-* Docker y Docker Compose
+* Docker Desktop (para la BBDD)
 
-### 1. Clonar el repositorio
+### 1. Base de Datos
+El proyecto incluye un `docker-compose.yml`. Inicia la base de datos:
 ```bash
-git clone [https://github.com/tu-usuario/TicketCore-Project.git](https://github.com/tu-usuario/TicketCore-Project.git)
-cd TicketCore-Project
+docker-compose up -d
