@@ -1,8 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Estilos globales opcionales */
-body {
-  @apply bg-gray-50 text-gray-800 font-sans;
+@theme {
+  --color-clifford: #da373d;
+  --font-display: "Satoshi", "sans-serif";
 }
