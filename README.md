@@ -36,7 +36,9 @@
 
 ## 🏛️ Modelo de Dominio y Datos
 
-El sistema utiliza una base de datos relacional MySQL optimizada.
+A continuación se muestra el esquema visual de la base de datos:
+
+![Diagrama Entidad-Relación](https://i.imgur.com/oGYLKit.png)
 
 ### Entidades Principales
 | Entidad | Descripción |
@@ -57,13 +59,13 @@ El proceso de compra no es directo, sino que pasa por un estado intermedio:
 1.  **Agregar:** Se crea o actualiza una `LineaCarrito`.
 2.  **Checkout:** El servicio `finalizarCompra`:
   * Recorre las líneas del carrito.
-  * Verifica el aforo disponible por evento.
+  * Verifica el aforo disponible por evento (`countByEventoId`).
   * Genera `N` entidades `Ticket` según la cantidad solicitada.
   * Vacia el carrito tras el éxito.
   * Todo bajo una transacción (`@Transactional`) para asegurar la integridad.
 
 ### 2. Control de Aforo (Sold Out)
-Antes de generar cualquier ticket, se consulta `countByEventoId`. Si `entradas_vendidas >= aforo_recinto`, se lanza una excepción personalizada `SoldOutException` (HTTP 400), bloqueando la compra.
+Antes de generar cualquier ticket, se consulta el stock. Si `entradas_vendidas >= aforo_recinto`, se lanza una excepción personalizada `SoldOutException` (HTTP 400), bloqueando la compra.
 
 ### 3. Sincronización Inteligente
 * **Persistencia de Relaciones:** Al importar de Ticketmaster, el sistema detecta si el **Recinto** o el **Artista** ya existen en base de datos (por nombre) para reutilizarlos y no duplicar registros.
