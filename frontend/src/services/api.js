@@ -15,8 +15,10 @@ export const eventService = {
 
 export const cartService = {
     getCart: (userId) => api.get(`/carrito/${userId}`),
+
     add: (userId, eventoId, cantidad) =>
         api.post(`/carrito/agregar?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
+
     checkout: (userId) => api.post(`/carrito/checkout/${userId}`)
 };
 

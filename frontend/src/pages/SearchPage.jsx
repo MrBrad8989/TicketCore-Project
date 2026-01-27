@@ -63,10 +63,15 @@ const SearchPage = ({ onSelectEvent }) => {
                     <h2 className="text-2xl font-bold mb-4">Encuentra tu evento ideal</h2>
                     <div className="bg-white p-4 rounded-lg shadow-lg text-gray-800 grid grid-cols-1 md:grid-cols-5 gap-4">
 
-                        <select className="form-select border p-2 rounded" onChange={e => setFilters({...filters, ciudad: e.target.value})}>
+                        <select
+                            className="form-select border p-2 rounded w-full"
+                            onChange={e => setFilters({...filters, ciudad: e.target.value})}
+                        >
                             <option value="">Todas las ciudades</option>
                             <option value="Madrid">Madrid</option>
                             <option value="Barcelona">Barcelona</option>
+                            <option value="Valencia">Valencia</option>
+                            <option value="Bilbao">Bilbao</option>
                         </select>
 
                         <input placeholder="Artista..." className="border p-2 rounded" onChange={e => setFilters({...filters, keyword: e.target.value})} />

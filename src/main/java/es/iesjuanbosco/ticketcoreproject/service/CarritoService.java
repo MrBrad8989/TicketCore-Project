@@ -6,39 +6,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class CarritoService {
 
     @Autowired private CarritoRepo carritoRepo;
-    @Autowired private UsuarioRepo usuarioRepo;
     @Autowired private EventoRepo eventoRepo;
-    @Autowired private TicketRepo ticketRepo;
+    @Autowired private UsuarioRepo usuarioRepo;
 
-    // Obtener o crear carrito del usuario
     public Carrito obtenerCarrito(Long usuarioId) {
+
         return carritoRepo.findByUsuarioId(usuarioId)
                 .orElseGet(() -> {
-                    Usuario u = usuarioRepo.findById(usuarioId).orElseThrow();
-                    Carrito c = new Carrito();
-                    c.setUsuario(u);
-                    return carritoRepo.save(c);
+                    Usuario usuario = usuarioRepo.findById(usuarioId)
+                            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                    Carrito nuevoCarrito = new Carrito();
+                    nuevoCarrito.setUsuario(usuario);
+                    return carritoRepo.save(nuevoCarrito);
                 });
     }
 
-    // Añadir item
+    @Transactional
     public Carrito agregarItem(Long usuarioId, Long eventoId, int cantidad) {
         Carrito carrito = obtenerCarrito(usuarioId);
-        Evento evento = eventoRepo.findById(eventoId).orElseThrow();
+        Evento evento = eventoRepo.findById(eventoId)
+                .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
-        // Buscamos si ya existe el evento en el carrito para sumar cantidad
-        LineaCarrito lineaExistente = carrito.getLineas().stream()
+        // Buscar si ya existe el evento en el carrito para sumar cantidad
+        Optional<LineaCarrito> lineaExistente = carrito.getLineas().stream()
                 .filter(l -> l.getEvento().getId().equals(eventoId))
-                .findFirst().orElse(null);
+                .findFirst();
 
-        if (lineaExistente != null) {
-            lineaExistente.setCantidad(lineaExistente.getCantidad() + cantidad);
+        if (lineaExistente.isPresent()) {
+            lineaExistente.get().setCantidad(lineaExistente.get().getCantidad() + cantidad);
         } else {
             LineaCarrito nuevaLinea = new LineaCarrito();
             nuevaLinea.setEvento(evento);
@@ -50,30 +51,9 @@ public class CarritoService {
         return carritoRepo.save(carrito);
     }
 
-    // Vaciar carrito
-    public void vaciarCarrito(Long usuarioId) {
-        Carrito c = obtenerCarrito(usuarioId);
-        c.getLineas().clear();
-        carritoRepo.save(c);
-    }
-
-    // FINALIZAR COMPRA (Convierte Items -> Tickets Reales)
     @Transactional
     public void finalizarCompra(Long usuarioId) {
         Carrito carrito = obtenerCarrito(usuarioId);
-        if(carrito.getLineas().isEmpty()) throw new RuntimeException("El carrito está vacío");
-
-        for (LineaCarrito linea : carrito.getLineas()) {
-            // Por cada unidad, creamos un ticket
-            for (int i = 0; i < linea.getCantidad(); i++) {
-                Ticket ticket = new Ticket();
-                ticket.setUsuario(carrito.getUsuario());
-                ticket.setEvento(linea.getEvento());
-                ticket.setFechaCompra(LocalDateTime.now());
-                ticketRepo.save(ticket);
-            }
-        }
-        // Vaciamos el carrito tras la compra
         carrito.getLineas().clear();
         carritoRepo.save(carrito);
     }
