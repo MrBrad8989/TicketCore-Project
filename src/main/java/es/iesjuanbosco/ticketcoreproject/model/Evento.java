@@ -15,9 +15,13 @@ public class Evento {
     private String titulo;
     private LocalDateTime fechaEvento;
     private Double precio;
+    @Column(length = 1000)
+    private String descripcion;
 
     @Column(unique = true)
     private String ticketmasterId;
+
+
 
     private String imageUrl;
 

@@ -14,4 +14,8 @@ public class Usuario {
 
     @Column(unique = true)
     private String email;
+
+
+    private String password; 
+    private String rol;
 }

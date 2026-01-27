@@ -13,20 +13,38 @@ import java.time.LocalDateTime;
 @Repository
 public interface EventoRepo extends JpaRepository<Evento, Long> {
 
-    // Búsqueda avanzada con filtros opcionales
+
+    boolean existsByTicketmasterId(String ticketmasterId);
+
+    // 2. Búsqueda Normal (Respeta el orden de la paginación)
+    // Nota: He añadido "OR :ciudad = ''" para arreglar el bug de "Todas las ciudades"
     @Query("SELECT DISTINCT e FROM Evento e " +
+            "LEFT JOIN e.recinto r " +
             "LEFT JOIN e.artistas a " +
-            "WHERE e.recinto.ciudad = :ciudad " +
-            "AND e.fechaEvento >= :fecha " +
+            "WHERE (:ciudad IS NULL OR :ciudad = '' OR r.ciudad = :ciudad) " +
             "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-            "AND (:genero IS NULL OR :genero = '' OR LOWER(a.genero) = LOWER(:genero))")
-    Page<Evento> buscarEventosAvanzado(
+            "AND (:genero IS NULL OR :genero = '' OR a.genero = :genero) " +
+            "AND (cast(:fecha as timestamp) IS NULL OR e.fechaEvento >= :fecha)")
+    Page<Evento> buscarEventos(
             @Param("ciudad") String ciudad,
             @Param("fecha") LocalDateTime fecha,
             @Param("keyword") String keyword,
             @Param("genero") String genero,
-            Pageable pageable
-    );
+            Pageable pageable);
 
-    boolean existsByTicketmasterId(String ticketmasterId);
+    // 3. Búsqueda ALEATORIA (Se usa cuando buscas en 'Todas las ciudades')
+    @Query("SELECT DISTINCT e FROM Evento e " +
+            "LEFT JOIN e.recinto r " +
+            "LEFT JOIN e.artistas a " +
+            "WHERE (:ciudad IS NULL OR :ciudad = '' OR r.ciudad = :ciudad) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:genero IS NULL OR :genero = '' OR a.genero = :genero) " +
+            "AND (cast(:fecha as timestamp) IS NULL OR e.fechaEvento >= :fecha) " +
+            "ORDER BY function('RAND')")
+    Page<Evento> buscarEventosAleatorios(
+            @Param("ciudad") String ciudad,
+            @Param("fecha") LocalDateTime fecha,
+            @Param("keyword") String keyword,
+            @Param("genero") String genero,
+            Pageable pageable);
 }
