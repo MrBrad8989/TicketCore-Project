@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaShoppingCart, FaTrash, FaCreditCard, FaTimes } from 'react-icons/fa';
+import { FaShoppingCart, FaTrash, FaCreditCard, FaTimes, FaMinus, FaPlus } from 'react-icons/fa';
 import { cartService } from '../services/api';
 import Swal from 'sweetalert2';
 
@@ -51,6 +51,34 @@ const CartModal = ({ user, onClose, refreshCart }) => {
         }
     };
 
+    const decreaseItem = async (linea) => {
+        try {
+            const { data } = await cartService.disminuir(user.id, linea.evento.id, 1);
+            const lineas = data.lineas || [];
+            setItems(lineas);
+            const t = lineas.reduce((acc, item) => acc + (item.cantidad * item.evento.precio), 0);
+            setTotal(t);
+            refreshCart();
+        } catch (error) {
+            console.error('Error disminuyendo item', error);
+            Swal.fire('Error', 'No se pudo disminuir la cantidad', 'error');
+        }
+    };
+
+    const removeLinea = async (linea) => {
+        try {
+            const { data } = await cartService.eliminarLinea(user.id, linea.id);
+            const lineas = data.lineas || [];
+            setItems(lineas);
+            const t = lineas.reduce((acc, item) => acc + (item.cantidad * item.evento.precio), 0);
+            setTotal(t);
+            refreshCart();
+        } catch (error) {
+            console.error('Error eliminando linea', error);
+            Swal.fire('Error', 'No se pudo eliminar la línea', 'error');
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/50 backdrop-blur-sm animate-fadeIn">
             {/* Panel lateral deslizante */}
@@ -96,6 +124,15 @@ const CartModal = ({ user, onClose, refreshCart }) => {
                   <span className="font-bold text-indigo-600">
                     {(item.cantidad * item.evento.precio).toFixed(2)} €
                   </span>
+                                    <div className="flex gap-2 mt-2">
+                                        <button onClick={() => decreaseItem(item)} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-sm">
+                                            <FaMinus />
+                                        </button>
+
+                                        <button onClick={() => removeLinea(item)} className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-sm text-red-600">
+                                            <FaTrash />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -131,3 +168,4 @@ const CartModal = ({ user, onClose, refreshCart }) => {
 };
 
 export default CartModal;
+

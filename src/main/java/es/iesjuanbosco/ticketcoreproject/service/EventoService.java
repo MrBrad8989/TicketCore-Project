@@ -52,9 +52,31 @@ public class EventoService {
         return eventoMapper.toDTO(eventoRepo.save(evento));
     }
 
-    public void borrarEvento(Long id) {
-        if(!eventoRepo.existsById(id)) throw new RuntimeException("No existe");
-        eventoRepo.deleteById(id);
+    public void borrarEvento(Long id, Long requesterId) {
+        borrarEvento(id, requesterId, null);
+    }
+
+    public void borrarEvento(Long id, Long requesterId, String requesterRol) {
+        Evento evento = eventoRepo.findById(id).orElseThrow(() -> new RuntimeException("No existe"));
+
+        // Admin puede borrar cualquiera
+        if (requesterRol != null && "ADMIN".equalsIgnoreCase(requesterRol)) {
+            eventoRepo.deleteById(id);
+            return;
+        }
+
+        // Si es empresa, solo puede borrar si es el creador
+        if (requesterRol == null || "EMPRESA".equalsIgnoreCase(requesterRol)) {
+            if (evento.getCreador() != null && evento.getCreador().getId().equals(requesterId)) {
+                eventoRepo.deleteById(id);
+                return;
+            } else {
+                throw new RuntimeException("No autorizado: solo la empresa creadora puede borrar este evento");
+            }
+        }
+
+        // Usuario normal no puede borrar
+        throw new RuntimeException("No autorizado");
     }
 
     public Optional<EventoDTO> obtenerEventoPorId(Long id) {

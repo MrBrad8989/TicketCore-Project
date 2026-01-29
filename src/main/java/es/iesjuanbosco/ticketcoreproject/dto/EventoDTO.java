@@ -15,4 +15,7 @@ public class EventoDTO {
     // Relaciones mostradas como DTOs
     private RecintoDTO recinto;
     private List<ArtistaDTO> artistas;
+
+    // Nuevo: id del usuario creador (empresa)
+    private Long creadorId;
 }

@@ -1,5 +1,9 @@
 package es.iesjuanbosco.ticketcoreproject.service;
 
+import es.iesjuanbosco.ticketcoreproject.dto.CarritoDTO;
+import es.iesjuanbosco.ticketcoreproject.dto.LineaCarritoDTO;
+import es.iesjuanbosco.ticketcoreproject.dto.EventoSimpleDTO;
+import es.iesjuanbosco.ticketcoreproject.dto.TicketDTO;
 import es.iesjuanbosco.ticketcoreproject.model.*;
 import es.iesjuanbosco.ticketcoreproject.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,15 +11,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
+import es.iesjuanbosco.ticketcoreproject.mapper.CarritoMapper;
+
 @Service
 public class CarritoService {
 
     @Autowired private CarritoRepo carritoRepo;
     @Autowired private EventoRepo eventoRepo;
     @Autowired private UsuarioRepo usuarioRepo;
+    @Autowired private CarritoMapper carritoMapper;
 
-    public Carrito obtenerCarrito(Long usuarioId) {
-        return carritoRepo.findByUsuarioId(usuarioId)
+    public CarritoDTO obtenerCarrito(Long usuarioId) {
+        Carrito c = carritoRepo.findByUsuarioId(usuarioId)
                 .orElseGet(() -> {
                     Usuario usuario = usuarioRepo.findById(usuarioId)
                             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -23,11 +30,13 @@ public class CarritoService {
                     nuevoCarrito.setUsuario(usuario);
                     return carritoRepo.save(nuevoCarrito);
                 });
+
+        return carritoMapper.toDTO(c);
     }
 
     @Transactional
-    public Carrito agregarItem(Long usuarioId, Long eventoId, int cantidad) {
-        Carrito carrito = obtenerCarrito(usuarioId);
+    public CarritoDTO agregarItem(Long usuarioId, Long eventoId, int cantidad) {
+        Carrito carrito = obtenerCarritoEntity(usuarioId);
         Evento evento = eventoRepo.findById(eventoId)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
 
@@ -45,13 +54,69 @@ public class CarritoService {
             carrito.getLineas().add(nuevaLinea);
         }
 
-        return carritoRepo.save(carrito);
+        carrito = carritoRepo.save(carrito);
+        return carritoMapper.toDTO(carrito);
     }
 
     @Transactional
     public void finalizarCompra(Long usuarioId) {
-        Carrito carrito = obtenerCarrito(usuarioId);
+        Carrito carrito = obtenerCarritoEntity(usuarioId);
         carrito.getLineas().clear();
         carritoRepo.save(carrito);
+    }
+
+    @Transactional
+    public CarritoDTO disminuirItem(Long usuarioId, Long eventoId, int cantidad) {
+        if (cantidad <= 0) throw new IllegalArgumentException("La cantidad a disminuir debe ser mayor que 0");
+        Carrito carrito = obtenerCarritoEntity(usuarioId);
+
+        Optional<LineaCarrito> lineaExistente = carrito.getLineas().stream()
+                .filter(l -> l.getEvento().getId().equals(eventoId))
+                .findFirst();
+
+        if (lineaExistente.isEmpty()) {
+            throw new RuntimeException("Línea no encontrada en el carrito");
+        }
+
+        LineaCarrito linea = lineaExistente.get();
+        int nuevaCantidad = linea.getCantidad() - cantidad;
+        if (nuevaCantidad > 0) {
+            linea.setCantidad(nuevaCantidad);
+        } else {
+            // eliminar la línea
+            carrito.getLineas().remove(linea);
+        }
+
+        carrito = carritoRepo.save(carrito);
+        return carritoMapper.toDTO(carrito);
+    }
+
+    @Transactional
+    public CarritoDTO eliminarLinea(Long usuarioId, Long lineaId) {
+        Carrito carrito = obtenerCarritoEntity(usuarioId);
+
+        Optional<LineaCarrito> lineaExistente = carrito.getLineas().stream()
+                .filter(l -> l.getId() != null && l.getId().equals(lineaId))
+                .findFirst();
+
+        if (lineaExistente.isEmpty()) {
+            throw new RuntimeException("Línea no encontrada en el carrito");
+        }
+
+        carrito.getLineas().remove(lineaExistente.get());
+        carrito = carritoRepo.save(carrito);
+        return carritoMapper.toDTO(carrito);
+    }
+
+    // Helpers
+    private Carrito obtenerCarritoEntity(Long usuarioId) {
+        return carritoRepo.findByUsuarioId(usuarioId)
+                .orElseGet(() -> {
+                    Usuario usuario = usuarioRepo.findById(usuarioId)
+                            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                    Carrito nuevoCarrito = new Carrito();
+                    nuevoCarrito.setUsuario(usuario);
+                    return carritoRepo.save(nuevoCarrito);
+                });
     }
 }

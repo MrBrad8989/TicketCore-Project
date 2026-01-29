@@ -16,10 +16,17 @@ const LoginModal = ({ onClose }) => {
         isAdmin: false // Solo para registro
     });
 
+    // Añadir campos empresa
+    const [empresaInfo, setEmpresaInfo] = useState({ telefono: '', empresaNombre: '' });
+
     const handleChange = (e) => {
         const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
         setFormData({ ...formData, [e.target.name]: value });
     };
+
+    const handleEmpresaChange = (e) => {
+        setEmpresaInfo({ ...empresaInfo, [e.target.name]: e.target.value });
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -31,7 +38,9 @@ const LoginModal = ({ onClose }) => {
                     nombre: formData.nombre,
                     email: formData.email,
                     password: formData.password,
-                    rol: formData.isAdmin ? 'ADMIN' : 'USER'
+                    rol: formData.isAdmin ? 'EMPRESA' : 'USER',
+                    telefono: formData.isAdmin ? empresaInfo.telefono : null,
+                    empresaNombre: formData.isAdmin ? empresaInfo.empresaNombre : null
                 };
 
                 await authService.register(registerData);
@@ -135,6 +144,7 @@ const LoginModal = ({ onClose }) => {
 
                     {/* Checkbox Admin (Solo Registro) */}
                     {isRegister && (
+                        <>
                         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                             <input
                                 name="isAdmin"
@@ -142,8 +152,17 @@ const LoginModal = ({ onClose }) => {
                                 className="rounded text-indigo-600 focus:ring-indigo-500"
                                 onChange={handleChange}
                             />
-                            <span className="flex items-center gap-1"><FaBuilding /> Soy Empresa (Admin)</span>
+                            <span className="flex items-center gap-1"><FaBuilding /> Soy Empresa</span>
                         </label>
+
+                        {/* Campos extra si es empresa */}
+                        {formData.isAdmin && (
+                            <>
+                            <input name="telefono" placeholder="Teléfono" className="border p-2 rounded" onChange={handleEmpresaChange} />
+                            <input name="empresaNombre" placeholder="Nombre de la empresa" className="border p-2 rounded" onChange={handleEmpresaChange} />
+                            </>
+                        )}
+                        </>
                     )}
 
                     <button className="bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-md mt-2">
@@ -172,3 +191,4 @@ const LoginModal = ({ onClose }) => {
 };
 
 export default LoginModal;
+

@@ -5,7 +5,7 @@ import EventCard from '../components/EventCard'; // (Crear este componente visua
 import Swal from 'sweetalert2';
 
 const SearchPage = ({ onSelectEvent }) => {
-    const { isAdmin } = useAuth();
+    const { isAdmin, user } = useAuth();
     const [eventos, setEventos] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -20,6 +20,10 @@ const SearchPage = ({ onSelectEvent }) => {
         cargarGeneros();
         buscar();
     }, [filters.page]); // Recargar si cambia la página
+
+    const updateFilter = (patch) => {
+        setFilters(prev => ({ ...prev, ...patch, page: 0 }));
+    }
 
     const cargarGeneros = async () => {
         try { const { data } = await eventService.getGeneros(); setGeneros(data); } catch(e){}
@@ -50,7 +54,7 @@ const SearchPage = ({ onSelectEvent }) => {
 
     const handleDelete = async (id) => {
         if ((await Swal.fire({ title: '¿Borrar?', icon: 'warning', showCancelButton: true })).isConfirmed) {
-            await eventService.delete(id);
+            await eventService.delete(id, user);
             buscar(); // Recargar lista
         }
     };
@@ -65,7 +69,7 @@ const SearchPage = ({ onSelectEvent }) => {
 
                         <select
                             className="form-select border p-2 rounded w-full"
-                            onChange={e => setFilters({...filters, ciudad: e.target.value})}
+                            onChange={e => updateFilter({ ciudad: e.target.value })}
                         >
                             <option value="">Todas las ciudades</option>
                             <option value="Madrid">Madrid</option>
@@ -74,11 +78,11 @@ const SearchPage = ({ onSelectEvent }) => {
                             <option value="Bilbao">Bilbao</option>
                         </select>
 
-                        <input placeholder="Artista..." className="border p-2 rounded" onChange={e => setFilters({...filters, keyword: e.target.value})} />
+                        <input placeholder="Artista..." className="border p-2 rounded" onChange={e => updateFilter({ keyword: e.target.value })} />
 
-                        <input type="date" className="border p-2 rounded" onChange={e => setFilters({...filters, fecha: e.target.value})} />
+                        <input type="date" className="border p-2 rounded" onChange={e => updateFilter({ fecha: e.target.value })} />
 
-                        <select className="border p-2 rounded" onChange={e => setFilters({...filters, genero: e.target.value})}>
+                        <select className="border p-2 rounded" onChange={e => updateFilter({ genero: e.target.value })}>
                             <option value="">Todos los géneros</option>
                             {generos.map(g => <option key={g} value={g}>{g}</option>)}
                         </select>

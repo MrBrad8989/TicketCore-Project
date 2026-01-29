@@ -1,5 +1,6 @@
 package es.iesjuanbosco.ticketcoreproject.controller;
 
+import es.iesjuanbosco.ticketcoreproject.dto.CarritoDTO;
 import es.iesjuanbosco.ticketcoreproject.model.Carrito;
 import es.iesjuanbosco.ticketcoreproject.service.CarritoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,12 @@ public class CarritoController {
     @Autowired private CarritoService carritoService;
 
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<Carrito> getCarrito(@PathVariable Long usuarioId) {
+    public ResponseEntity<CarritoDTO> getCarrito(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(carritoService.obtenerCarrito(usuarioId));
     }
 
     @PostMapping("/agregar")
-    public ResponseEntity<Carrito> agregar(@RequestParam Long usuarioId, @RequestParam Long eventoId, @RequestParam int cantidad) {
+    public ResponseEntity<CarritoDTO> agregar(@RequestParam Long usuarioId, @RequestParam Long eventoId, @RequestParam int cantidad) {
         return ResponseEntity.ok(carritoService.agregarItem(usuarioId, eventoId, cantidad));
     }
 
@@ -29,6 +30,24 @@ public class CarritoController {
             return ResponseEntity.ok("Compra realizada con éxito");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/disminuir")
+    public ResponseEntity<CarritoDTO> disminuir(@RequestParam Long usuarioId, @RequestParam Long eventoId, @RequestParam int cantidad) {
+        try {
+            return ResponseEntity.ok(carritoService.disminuirItem(usuarioId, eventoId, cantidad));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/linea/{usuarioId}/{lineaId}")
+    public ResponseEntity<CarritoDTO> eliminarLinea(@PathVariable Long usuarioId, @PathVariable Long lineaId) {
+        try {
+            return ResponseEntity.ok(carritoService.eliminarLinea(usuarioId, lineaId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

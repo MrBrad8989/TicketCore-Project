@@ -42,7 +42,7 @@ public class EventoController {
             @RequestParam(required = false) String genero,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
-            @PageableDefault(size = 9, page = 0) Pageable pageable) {
+            @PageableDefault(size = 9) Pageable pageable) {
 
         if (fechaInicio == null) {
             fechaInicio = LocalDateTime.now();
@@ -51,24 +51,34 @@ public class EventoController {
         return ResponseEntity.ok(eventoService.buscarEventos(ciudad, keyword, genero, fechaInicio, pageable));
     }
 
-    // --- ENDPOINTS CRUD (Requeridos para nota completa) ---
 
     @PostMapping
-    @Operation(summary = "Crear Evento (Admin)", description = "Crea un nuevo evento manualmente")
-    public ResponseEntity<EventoDTO> crearEvento(@RequestBody EventoDTO eventoDTO) {
+    @Operation(summary = "Crear Evento (Admin/Empresa)", description = "Crea un nuevo evento; si la petición incluye cabeceras X-User-Id/X-User-Rol y el DTO no tiene creadorId, se asigna automáticamente.")
+    public ResponseEntity<EventoDTO> crearEvento(@RequestBody EventoDTO eventoDTO,
+                                                  @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // Si no viene creadorId en el DTO y hay un userId, lo asignamos
+        if (eventoDTO.getCreadorId() == null && userId != null) {
+            eventoDTO.setCreadorId(userId);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(eventoService.crearEvento(eventoDTO));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar Evento (Admin)", description = "Modifica datos de un evento existente")
-    public ResponseEntity<EventoDTO> actualizarEvento(@PathVariable Long id, @RequestBody EventoDTO eventoDTO) {
+    @Operation(summary = "Actualizar Evento (Admin/Empresa creadora)", description = "Modifica datos de un evento existente")
+    public ResponseEntity<EventoDTO> actualizarEvento(@PathVariable Long id, @RequestBody EventoDTO eventoDTO,
+                                                       @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        // si es ADMIN dejamos continuar; si EMPRESA y creadorId no coincide, denegamos.
+        if (eventoDTO.getCreadorId() == null || !eventoDTO.getCreadorId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(eventoService.actualizarEvento(id, eventoDTO));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Borrar Evento (Admin)", description = "Elimina un evento de la base de datos")
-    public ResponseEntity<Void> borrarEvento(@PathVariable Long id) {
-        eventoService.borrarEvento(id);
+    @Operation(summary = "Borrar Evento (Admin/Empresa creadora)", description = "Elimina un evento de la base de datos. Admins pueden borrar cualquiera; empresas solo los suyos.")
+    public ResponseEntity<Void> borrarEvento(@PathVariable Long id,
+                                              @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        eventoService.borrarEvento(id, userId);
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/{id}")

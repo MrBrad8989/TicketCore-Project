@@ -1,9 +1,9 @@
 package es.iesjuanbosco.ticketcoreproject.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,5 +39,10 @@ public class Evento {
             joinColumns = @JoinColumn(name = "evento_id"),
             inverseJoinColumns = @JoinColumn(name = "artista_id")
     )
+    @JsonIgnore
     private List<Artista> artistas;
+
+    @ManyToOne
+    @JoinColumn(name = "creador_id")
+    private Usuario creador;
 }

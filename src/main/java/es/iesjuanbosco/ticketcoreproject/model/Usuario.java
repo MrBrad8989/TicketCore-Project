@@ -1,7 +1,6 @@
 package es.iesjuanbosco.ticketcoreproject.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,4 +19,8 @@ public class Usuario {
 
     private String password; 
     private String rol;
+
+    // Campos adicionales si es empresa
+    private String telefono;
+    private String empresaNombre;
 }
