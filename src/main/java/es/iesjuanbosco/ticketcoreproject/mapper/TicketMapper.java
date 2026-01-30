@@ -11,5 +11,9 @@ public interface TicketMapper {
     @Mapping(source = "evento.titulo", target = "tituloEvento")
     @Mapping(source = "usuario.nombre", target = "nombreUsuario")
     @Mapping(source = "fechaCompra", target = "fechaCompra", dateFormat = "dd/MM/yyyy HH:mm")
+    @Mapping(source = "compradorNombre", target = "compradorNombre")
+    @Mapping(source = "compradorEmail", target = "compradorEmail")
+    @Mapping(source = "compradorDocumento", target = "compradorDocumento")
+    @Mapping(source = "compradorFechaNacimiento", target = "compradorFechaNacimiento", dateFormat = "yyyy-MM-dd")
     TicketDTO toDTO(Ticket ticket);
 }

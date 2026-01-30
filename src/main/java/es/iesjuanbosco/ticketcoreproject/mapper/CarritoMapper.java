@@ -14,13 +14,18 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface CarritoMapper {
 
+    // Map usuario.id -> usuarioId and map lineas collection
+    @Mapping(source = "usuario.id", target = "usuarioId")
     @Mapping(source = "lineas", target = "lineas")
     CarritoDTO toDTO(Carrito carrito);
 
+    @SuppressWarnings("unused")
     List<LineaCarritoDTO> lineasToDTOs(List<LineaCarrito> lineas);
 
-    // Mapstruct needs a mapping for a single LineaCarrito -> LineaCarritoDTO
+    @SuppressWarnings("unused")
+    @Mapping(source = "evento", target = "evento")
     LineaCarritoDTO lineaToDTO(LineaCarrito linea);
 
+    @SuppressWarnings("unused")
     EventoSimpleDTO eventoToSimpleDTO(Evento evento);
 }

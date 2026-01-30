@@ -18,6 +18,9 @@ const Navbar = ({ cartCount, onOpenCart, onOpenLogin }) => {
                 <div className="hidden md:flex gap-6">
                     <Link to="/" className="hover:text-yellow-400 font-medium">Inicio</Link>
                     <Link to="/buscar" className="hover:text-yellow-400 font-medium">Buscador</Link>
+                    {user?.rol === 'EMPRESA' && (
+                        <Link to="/crear-evento" className="hover:text-yellow-400 font-medium">Crear evento</Link>
+                    )}
                 </div>
 
                 {/* Zona Usuario / Carrito */}

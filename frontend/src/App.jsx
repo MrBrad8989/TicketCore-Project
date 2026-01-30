@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { cartService } from './services/api';
 import Swal from 'sweetalert2';
@@ -9,6 +9,9 @@ import SearchPage from './pages/SearchPage';
 import EventModal from './components/EventModal';
 import CartModal from './components/CartModal';
 import LoginModal from './components/LoginModal';
+import Home from './pages/Home';
+import CreateEvent from './pages/CreateEvent';
+import CompraDetail from './pages/CompraDetail'; // Asegúrate de que la ruta de importación sea correcta
 
 // Wrapper interno para poder usar useAuth
 const MainLayout = () => {
@@ -57,8 +60,10 @@ const MainLayout = () => {
             />
 
             <Routes>
-                <Route path="/" element={<div className="text-center py-20 bg-gray-900 text-white"><h1 className="text-5xl font-bold mb-4">Bienvenido a TicketCore</h1><p className="text-xl">Usa el buscador para empezar.</p></div>} />
+                <Route path="/" element={<Home />} />
                 <Route path="/buscar" element={<SearchPage onSelectEvent={setSelectedEvent} />} />
+                <Route path="/crear-evento" element={<CreateEvent />} />
+                <Route path="/compras/:id" element={<CompraDetail />} />
             </Routes>
 
             {/* MODALES GLOBALES */}

@@ -22,7 +22,7 @@ public interface EventoRepo extends JpaRepository<Evento, Long> {
             "LEFT JOIN e.recinto r " +
             "LEFT JOIN e.artistas a " +
             "WHERE (:ciudad IS NULL OR :ciudad = '' OR r.ciudad = :ciudad) " +
-            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR (LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
             "AND (:genero IS NULL OR :genero = '' OR a.genero = :genero) " +
             "AND (cast(:fecha as timestamp) IS NULL OR e.fechaEvento >= :fecha)")
     Page<Evento> buscarEventos(
@@ -37,7 +37,7 @@ public interface EventoRepo extends JpaRepository<Evento, Long> {
             "LEFT JOIN e.recinto r " +
             "LEFT JOIN e.artistas a " +
             "WHERE (:ciudad IS NULL OR :ciudad = '' OR r.ciudad = :ciudad) " +
-            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR (LOWER(e.titulo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(a.nombre) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
             "AND (:genero IS NULL OR :genero = '' OR a.genero = :genero) " +
             "AND (cast(:fecha as timestamp) IS NULL OR e.fechaEvento >= :fecha) " +
             "ORDER BY function('RAND')")

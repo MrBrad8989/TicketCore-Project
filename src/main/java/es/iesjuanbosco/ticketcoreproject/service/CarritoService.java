@@ -1,14 +1,13 @@
 package es.iesjuanbosco.ticketcoreproject.service;
 
+import es.iesjuanbosco.ticketcoreproject.dto.CompradorInfoDTO;
 import es.iesjuanbosco.ticketcoreproject.dto.CarritoDTO;
-import es.iesjuanbosco.ticketcoreproject.dto.LineaCarritoDTO;
-import es.iesjuanbosco.ticketcoreproject.dto.EventoSimpleDTO;
-import es.iesjuanbosco.ticketcoreproject.dto.TicketDTO;
 import es.iesjuanbosco.ticketcoreproject.model.*;
 import es.iesjuanbosco.ticketcoreproject.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Optional;
 
 import es.iesjuanbosco.ticketcoreproject.mapper.CarritoMapper;
@@ -20,6 +19,9 @@ public class CarritoService {
     @Autowired private EventoRepo eventoRepo;
     @Autowired private UsuarioRepo usuarioRepo;
     @Autowired private CarritoMapper carritoMapper;
+
+    // Inyectamos CompraService para delegar el checkout
+    @Autowired private CompraService compraService;
 
     public CarritoDTO obtenerCarrito(Long usuarioId) {
         Carrito c = carritoRepo.findByUsuarioId(usuarioId)
@@ -60,9 +62,10 @@ public class CarritoService {
 
     @Transactional
     public void finalizarCompra(Long usuarioId) {
-        Carrito carrito = obtenerCarritoEntity(usuarioId);
-        carrito.getLineas().clear();
-        carritoRepo.save(carrito);
+        // Delegar al servicio de compras para crear Compra y Tickets
+        CompradorInfoDTO compradorInfo = new CompradorInfoDTO();
+        // Si se quiere obtener datos del usuario para autocompletar, se podría rellenar compradorInfo aquí
+        compraService.crearCompraDesdeCarrito(usuarioId, compradorInfo);
     }
 
     @Transactional

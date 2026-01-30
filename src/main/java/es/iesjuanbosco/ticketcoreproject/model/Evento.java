@@ -45,4 +45,7 @@ public class Evento {
     @ManyToOne
     @JoinColumn(name = "creador_id")
     private Usuario creador;
+
+    // Número máximo de entradas disponibles para este evento
+    private Integer maxEntradas;
 }

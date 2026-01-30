@@ -1,7 +1,6 @@
 package es.iesjuanbosco.ticketcoreproject.dto;
 
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 public class TicketDTO {
@@ -11,4 +10,10 @@ public class TicketDTO {
 
     private String tituloEvento;
     private String nombreUsuario;
+
+    // Datos del titular/beneficiario del ticket
+    private String compradorNombre;
+    private String compradorEmail;
+    private String compradorDocumento;
+    private String compradorFechaNacimiento; // yyyy-MM-dd
 }

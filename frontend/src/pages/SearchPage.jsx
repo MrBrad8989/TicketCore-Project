@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { eventService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import EventCard from '../components/EventCard'; // (Crear este componente visual)
 import Swal from 'sweetalert2';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const SearchPage = ({ onSelectEvent }) => {
     const { isAdmin, user } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
+    // createdIdToOpen: almacenará el id del evento recién creado que debemos abrir una vez
+    const [createdIdToOpen, setCreatedIdToOpen] = useState(null);
     const [eventos, setEventos] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -16,10 +21,61 @@ const SearchPage = ({ onSelectEvent }) => {
     const [totalPages, setTotalPages] = useState(0);
     const [generos, setGeneros] = useState([]);
 
+    const createdOpenedRef = useRef(false);
+
+    // Si hay query param ?keyword=... o ?createdId=... al cargar, lo usamos
     useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const kw = params.get('keyword');
+        const fechaParam = params.get('fecha');
+        const created = params.get('createdId');
+
+        // Aplicamos filtros iniciales
+        // Si venimos desde la creación de un evento (created param), limpiamos explícitamente el keyword
+        if (created) {
+            setFilters(prev => ({
+                ...prev,
+                keyword: '',
+                fecha: fechaParam || prev.fecha,
+                page: 0
+            }));
+        } else {
+            setFilters(prev => ({
+                ...prev,
+                keyword: kw || prev.keyword,
+                fecha: fechaParam || prev.fecha,
+                page: 0
+            }));
+        }
+
+        // Si venía createdId, lo guardamos para abrirlo después y eliminamos el param inmediatamente
+        if (created) {
+            setCreatedIdToOpen(created);
+            try {
+                const newParams = new URLSearchParams(location.search);
+                newParams.delete('createdId');
+                const newSearch = newParams.toString();
+                if (newSearch) {
+                    navigate(`${location.pathname}?${newSearch}`, { replace: true });
+                } else {
+                    navigate(location.pathname, { replace: true });
+                }
+            } catch (e) {
+                // ignorar errores de navegación
+            }
+        }
+
         cargarGeneros();
+    }, [location.search, location.pathname, navigate]);
+
+    // Rebuscar cuando cambien los filtros (incluyendo page)
+    useEffect(() => {
         buscar();
-    }, [filters.page]); // Recargar si cambia la página
+    }, [filters]);
+
+    useEffect(() => {
+        document.title = 'TicketCore - Buscar';
+    }, []);
 
     const updateFilter = (patch) => {
         setFilters(prev => ({ ...prev, ...patch, page: 0 }));
@@ -45,6 +101,26 @@ const SearchPage = ({ onSelectEvent }) => {
             const { data } = await eventService.search(params);
             setEventos(data.content);
             setTotalPages(data.page.totalPages);
+
+            // Si venimos con createdId en la URL, intentamos abrir ese evento (si está en los resultados) o lo cargamos por id
+            const createdId = createdIdToOpen;
+            if (createdId && !createdOpenedRef.current) {
+                const found = data.content.find(e => e.id && String(e.id) === String(createdId));
+                if (found) {
+                    onSelectEvent(found);
+                    setCreatedIdToOpen(null);
+                } else {
+                    try {
+                        const { data: single } = await eventService.getById(createdId);
+                        onSelectEvent(single);
+                        setCreatedIdToOpen(null);
+                    } catch (e) {
+                        console.warn('Created event not found by id', createdId);
+                    }
+                }
+                createdOpenedRef.current = true;
+            }
+
         } catch (error) {
             console.error(error);
         } finally {

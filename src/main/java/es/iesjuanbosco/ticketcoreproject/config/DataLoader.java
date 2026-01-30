@@ -2,10 +2,13 @@ package es.iesjuanbosco.ticketcoreproject.config;
 
 import es.iesjuanbosco.ticketcoreproject.service.TicketmasterSyncService;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(name = "app.load-data", havingValue = "true", matchIfMissing = true)
 public class DataLoader implements CommandLineRunner {
 
     private final TicketmasterSyncService ticketmasterService;

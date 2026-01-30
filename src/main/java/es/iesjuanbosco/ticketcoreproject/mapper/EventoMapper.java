@@ -15,9 +15,11 @@ public interface EventoMapper {
 
     // Mapstruct detecta automáticamente los campos con el mismo nombre
     @Mapping(source = "creador", target = "creadorId", qualifiedByName = "mapCreadorToId")
+    @Mapping(source = "maxEntradas", target = "maxEntradas")
     EventoDTO toDTO(Evento evento);
 
     @Mapping(source = "creadorId", target = "creador", qualifiedByName = "mapIdToCreador")
+    @Mapping(source = "maxEntradas", target = "maxEntradas")
     Evento toEntity(EventoDTO eventoDTO);
 
     // Mapeos para las subentidades

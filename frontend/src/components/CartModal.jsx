@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FaShoppingCart, FaTrash, FaCreditCard, FaTimes, FaMinus, FaPlus } from 'react-icons/fa';
-import { cartService } from '../services/api';
+import { FaShoppingCart, FaTrash, FaCreditCard, FaTimes, FaMinus } from 'react-icons/fa';
+import { cartService, descargarPdf, compraDirecta, confirmPayment, descargarZip } from '../services/api';
 import Swal from 'sweetalert2';
 
 const CartModal = ({ user, onClose, refreshCart }) => {
@@ -12,6 +12,7 @@ const CartModal = ({ user, onClose, refreshCart }) => {
     // Cargar carrito al abrir el modal
     useEffect(() => {
         fetchCart();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchCart = async () => {
@@ -30,22 +31,192 @@ const CartModal = ({ user, onClose, refreshCart }) => {
         }
     };
 
+    // Recolecta datos de compradores para una línea concreta
+    const collectCompradoresForLinea = async (linea) => {
+        const compradores = [];
+
+        // Si estamos logueados, preguntar si queremos autocompletar con los datos del usuario
+        if (user) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'Rellenar con tus datos?',
+                text: '¿Deseas rellenar automáticamente los datos de los compradores con tu información de usuario?',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, rellenar',
+                cancelButtonText: 'No, introducir manualmente'
+            });
+            if (isConfirmed) {
+                for (let i = 0; i < linea.cantidad; i++) {
+                    compradores.push({
+                        nombre: user.nombre || '',
+                        apellido: user.apellido || '',
+                        email: user.email || ''
+                    });
+                }
+                return compradores;
+            }
+        }
+
+        // Construir un único formulario con N filas para pedir los datos de una vez
+        const rowsHtml = [];
+        for (let i = 0; i < linea.cantidad; i++) {
+            rowsHtml.push(`
+                <div style="margin-bottom:8px;border-radius:6px;padding:8px;background:#f8fafc;border:1px solid #e6eef5">
+                  <div style="font-weight:600;margin-bottom:6px">Entrada ${i + 1}</div>
+                  <input id="nombre-${i}" class="swal2-input" placeholder="Nombre">
+                  <input id="apellido-${i}" class="swal2-input" placeholder="Apellido (opcional)">
+                  <input id="email-${i}" class="swal2-input" placeholder="Email">
+                  <input id="documento-${i}" class="swal2-input" placeholder="Documento identificacion (opcional)">
+                  <input id="fecha-${i}" type="date" class="swal2-input" placeholder="Fecha nacimiento (opcional)">
+                </div>
+            `);
+        }
+
+        const html = `
+            <div style="max-height: 60vh; overflow:auto; text-align:left">
+              <div style="margin-bottom:8px"><label><input type=checkbox id="copyAll" /> Copiar datos de la primera fila a todas</label></div>
+              ${rowsHtml.join('')}
+            </div>
+        `;
+
+        const result = await Swal.fire({
+            title: `Introduce datos de ${linea.cantidad} comprador(es)` ,
+            html,
+            focusConfirm: false,
+            showCancelButton: true,
+            customClass: { popup: 'swal2-large' },
+            preConfirm: () => {
+                const copyAll = document.getElementById('copyAll')?.checked;
+                const collected = [];
+
+                // leer primera fila
+                const first = {
+                    nombre: document.getElementById('nombre-0')?.value || '',
+                    apellido: document.getElementById('apellido-0')?.value || '',
+                    email: document.getElementById('email-0')?.value || '',
+                    documento: document.getElementById('documento-0')?.value || '',
+                    fecha: document.getElementById('fecha-0')?.value || ''
+                };
+
+                if (copyAll) {
+                    // validar la primera fila
+                    if (!first.nombre || !first.email) {
+                        Swal.showValidationMessage('Nombre y email son obligatorios en la primera fila para copiar a todas');
+                        return null;
+                    }
+                    for (let i = 0; i < linea.cantidad; i++) {
+                        collected.push({
+                            nombre: first.nombre,
+                            apellido: first.apellido,
+                            email: first.email,
+                            documentoIdentificacion: first.documento || null,
+                            fechaNacimiento: first.fecha || null
+                        });
+                    }
+                    return collected;
+                }
+
+                // Si no copiamos, leer todas las filas
+                for (let i = 0; i < linea.cantidad; i++) {
+                    const nombre = document.getElementById(`nombre-${i}`)?.value || '';
+                    const apellido = document.getElementById(`apellido-${i}`)?.value || '';
+                    const email = document.getElementById(`email-${i}`)?.value || '';
+                    const documento = document.getElementById(`documento-${i}`)?.value || '';
+                    const fecha = document.getElementById(`fecha-${i}`)?.value || '';
+
+                    if (!nombre || !email) {
+                        Swal.showValidationMessage(`Fila ${i + 1}: nombre y email son obligatorios`);
+                        return null;
+                    }
+
+                    collected.push({
+                        nombre,
+                        apellido,
+                        email,
+                        documentoIdentificacion: documento || null,
+                        fechaNacimiento: fecha || null
+                    });
+                }
+
+                return collected;
+            }
+        });
+
+        if (!result || result.isDismissed) return null;
+        return result.value; // array de compradores
+    };
+
     const handleCheckout = async () => {
         setProcessing(true);
         try {
-            await cartService.checkout(user.id);
+            let usuarioId = user ? user.id : null;
+
+            // Construir payload CompraDirectaRequest a partir de las lineas del carrito
+            const lineasPayload = [];
+
+            for (const linea of items) {
+                // Collect compradores por linea si cantidad > 0
+                let compradores = null;
+                if (linea.cantidad > 0) {
+                    compradores = await collectCompradoresForLinea(linea);
+                    if (compradores === null) {
+                        // cancelado por el usuario
+                        setProcessing(false);
+                        return;
+                    }
+                }
+
+                // Convertir compradores a CompradorInfoDTO (si existe)
+                const compradoresDto = compradores && compradores.length > 0 ? compradores.map(c => ({
+                    nombre: c.nombre,
+                    apellido: c.apellido,
+                    email: c.email,
+                    documentoIdentificacion: c.documentoIdentificacion || null,
+                    fechaNacimiento: c.fechaNacimiento || null
+                })) : null;
+
+                lineasPayload.push({
+                    eventoId: linea.evento.id,
+                    cantidad: linea.cantidad,
+                    compradores: compradoresDto
+                });
+            }
+
+            const payload = {
+                usuarioId: usuarioId,
+                compradorInfo: null, // datos por línea ya incluidos
+                lineas: lineasPayload
+            };
+
+            // Crear la compra (directa) con la info detallada
+            const compra = await compraDirecta(payload);
+
+            // Confirmar pago
+            const compraConfirmada = await confirmPayment(compra.id);
+
+            // Intentar descargar ZIP con todos los tickets; fallback a PDF si falla
+            try {
+                await descargarZip(compraConfirmada.id);
+            } catch (eZip) {
+                console.warn('No se pudo descargar el ZIP, intentando PDF individual', eZip);
+                try {
+                    await descargarPdf(compraConfirmada.id);
+                } catch (ePdf) {
+                    console.warn('No se pudo descargar el PDF individual', ePdf);
+                }
+            }
 
             Swal.fire({
                 icon: 'success',
                 title: '¡Compra realizada!',
-                text: 'Te hemos enviado las entradas a tu correo.',
+                text: 'Tu compra se ha procesado correctamente.',
                 confirmButtonColor: '#10B981' // Verde Tailwind
             });
 
             refreshCart(); // Actualizar contador en Navbar
             onClose(); // Cerrar modal
         } catch (error) {
-            Swal.fire('Error', 'No se pudo procesar la compra. Revisa el stock.', 'error');
+            console.error('Error en checkout', error);
+            Swal.fire('Error', error?.response?.data || 'No se pudo procesar la compra. Revisa el stock.', 'error');
         } finally {
             setProcessing(false);
         }

@@ -4,12 +4,14 @@ import es.iesjuanbosco.ticketcoreproject.dto.EventoDTO;
 import es.iesjuanbosco.ticketcoreproject.mapper.EventoMapper;
 import es.iesjuanbosco.ticketcoreproject.model.Evento;
 import es.iesjuanbosco.ticketcoreproject.repository.EventoRepo;
+import es.iesjuanbosco.ticketcoreproject.repository.ArtistaRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -20,6 +22,9 @@ public class EventoService {
 
     @Autowired
     private EventoMapper eventoMapper;
+
+    @Autowired
+    private ArtistaRepo artistaRepo;
 
     public Page<EventoDTO> buscarEventos(String ciudad, String keyword, String genero, LocalDateTime fecha, Pageable pageable) {
         Page<Evento> eventos;
@@ -39,6 +44,25 @@ public class EventoService {
     // --- RESTO DE MÉTODOS CRUD (Mantén los que ya tenías: crear, actualizar, borrar) ---
     public EventoDTO crearEvento(EventoDTO eventoDTO) {
         Evento evento = eventoMapper.toEntity(eventoDTO);
+        // Asociar artistas: si vienen nombres en DTO, crear o reutilizar Artistas
+        if (eventoDTO.getArtistas() != null && !eventoDTO.getArtistas().isEmpty()) {
+            List<es.iesjuanbosco.ticketcoreproject.model.Artista> artistas = new java.util.ArrayList<>();
+            for (var aDto : eventoDTO.getArtistas()) {
+                String nombre = aDto.getNombre();
+                if (nombre == null || nombre.trim().isEmpty()) continue;
+                es.iesjuanbosco.ticketcoreproject.model.Artista existing = artistaRepo.findByNombreIgnoreCase(nombre.trim());
+                if (existing != null) {
+                    artistas.add(existing);
+                } else {
+                    es.iesjuanbosco.ticketcoreproject.model.Artista nuevo = new es.iesjuanbosco.ticketcoreproject.model.Artista();
+                    nuevo.setNombre(nombre.trim());
+                    // si viene género lo podemos usar
+                    if (aDto.getGenero() != null) nuevo.setGenero(aDto.getGenero());
+                    artistas.add(artistaRepo.save(nuevo));
+                }
+            }
+            evento.setArtistas(artistas);
+        }
         if (evento.getFechaEvento() == null) evento.setFechaEvento(LocalDateTime.now().plusDays(30));
         if (evento.getPrecio() == null) evento.setPrecio(0.0);
         return eventoMapper.toDTO(eventoRepo.save(evento));

@@ -82,6 +82,20 @@
             <artifactId>mapstruct</artifactId>
             <version>${org.mapstruct.version}</version>
         </dependency>
+
+        <!-- H2 para tests embebidos -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Añadir dependencia PDFBox para generar PDFs -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.27</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -119,6 +133,8 @@
             </plugin>
 
             <!-- Frontend build: instala npm, build de Vite y copia a resources/static -->
+            <!-- Se comenta temporalmente para evitar que Maven intente ejecutar npm en este entorno -->
+            <!--
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -157,6 +173,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
 
             <!-- Copiar la build del frontend a resources/static -->
             <plugin>
@@ -170,7 +187,10 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                            <!-- Copiar directamente a src/main/resources/static para que el IDE vea la versión compilada -->
+                            <outputDirectory>${project.basedir}/src/main/resources/static</outputDirectory>
+                            <!-- Sobrescribir archivos existentes (útil durante desarrollo) -->
+                            <overwrite>true</overwrite>
                             <resources>
                                 <resource>
                                     <directory>${project.basedir}/frontend/dist</directory>

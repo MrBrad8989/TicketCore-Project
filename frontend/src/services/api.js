@@ -19,7 +19,8 @@ export const cartService = {
     add: (userId, eventoId, cantidad) =>
         api.post(`/carrito/agregar?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
 
-    checkout: (userId) => api.post(`/carrito/checkout/${userId}`),
+    // Mantener antigua firma para compatibilidad (llama a checkoutFromCart internamente)
+    checkout: (userId, compradorInfo = null) => checkoutFromCart(userId, compradorInfo),
 
     disminuir: (userId, eventoId, cantidad) =>
         api.post(`/carrito/disminuir?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
@@ -32,3 +33,51 @@ export const authService = {
     login: (creds) => api.post('/auth/login', creds),
     register: (data) => api.post('/auth/register', data)
 };
+
+// Funciones nuevas/actualizadas para integrar con el backend de compras
+export async function checkoutFromCart(usuarioId, compradorInfo = null) {
+  // Si tenemos datos de comprador, enviamos JSON explícito
+  if (compradorInfo) {
+    const res = await api.post(`/compras/carrito/${usuarioId}`, compradorInfo, { headers: { 'Content-Type': 'application/json' } });
+    return res.data;
+  }
+  // Si no hay compradorInfo, hacemos POST sin cuerpo para evitar problemas de Content-Type
+  const res = await api.post(`/compras/carrito/${usuarioId}`);
+  return res.data;
+}
+
+export async function compraDirecta(payload) {
+  const res = await api.post('/compras/directo', payload);
+  return res.data;
+}
+
+export async function descargarPdf(compraId) {
+  const res = await api.get(`/compras/${compraId}/pdf`, { responseType: 'blob' });
+  const blob = new Blob([res.data], { type: 'application/pdf' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `compra-${compraId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function confirmPayment(compraId) {
+  const res = await api.post(`/pagos/${compraId}/confirm`);
+  return res.data;
+}
+
+export async function descargarZip(compraId) {
+  const res = await api.get(`/compras/${compraId}/zip`, { responseType: 'blob' });
+  const blob = new Blob([res.data], { type: 'application/zip' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `compra-${compraId}-tickets.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}

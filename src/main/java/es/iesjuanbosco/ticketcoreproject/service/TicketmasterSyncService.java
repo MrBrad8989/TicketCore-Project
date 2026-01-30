@@ -10,6 +10,7 @@ import es.iesjuanbosco.ticketcoreproject.repository.EventoRepo;
 import es.iesjuanbosco.ticketcoreproject.repository.RecintoRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
+@ConditionalOnProperty(name = "app.load-data", havingValue = "true", matchIfMissing = true)
 public class TicketmasterSyncService {
 
     @Value("${ticketmaster.api.key}")

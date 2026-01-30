@@ -11,4 +11,7 @@ import java.util.List;
 public interface ArtistaRepo extends JpaRepository<Artista, Long> {
     @Query("SELECT DISTINCT a.genero FROM Artista a WHERE a.genero IS NOT NULL ORDER BY a.genero ASC")
     List<String> findGenerosEspecificos();
+
+    // Buscar artista por nombre (ignorando mayúsculas/minúsculas)
+    Artista findByNombreIgnoreCase(String nombre);
 }

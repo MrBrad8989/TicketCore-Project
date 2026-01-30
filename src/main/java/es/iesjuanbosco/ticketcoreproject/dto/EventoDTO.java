@@ -18,4 +18,5 @@ public class EventoDTO {
 
     // Nuevo: id del usuario creador (empresa)
     private Long creadorId;
+    private Integer maxEntradas;
 }
