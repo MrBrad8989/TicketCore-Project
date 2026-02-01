@@ -36,18 +36,17 @@ export const authService = {
 
 // Funciones nuevas/actualizadas para integrar con el backend de compras
 export async function checkoutFromCart(usuarioId, compradorInfo = null) {
-  // Si tenemos datos de comprador, enviamos JSON explícito
-  if (compradorInfo) {
-    const res = await api.post(`/compras/carrito/${usuarioId}`, compradorInfo, { headers: { 'Content-Type': 'application/json' } });
-    return res.data;
-  }
-  // Si no hay compradorInfo, hacemos POST sin cuerpo para evitar problemas de Content-Type
-  const res = await api.post(`/compras/carrito/${usuarioId}`);
+  // Enviar siempre JSON para evitar Content-Type x-www-form-urlencoded
+  const headers = { 'Content-Type': 'application/json' };
+  // Si compradorInfo es null, enviar un objeto vacío {} para forzar JSON
+  const body = compradorInfo ? compradorInfo : {};
+  const res = await api.post(`/compras/carrito/${usuarioId}`, body, { headers });
   return res.data;
 }
 
 export async function compraDirecta(payload) {
-  const res = await api.post('/compras/directo', payload);
+  // Forzar JSON
+  const res = await api.post('/compras/directo', payload, { headers: { 'Content-Type': 'application/json' } });
   return res.data;
 }
 
@@ -65,7 +64,7 @@ export async function descargarPdf(compraId) {
 }
 
 export async function confirmPayment(compraId) {
-  const res = await api.post(`/pagos/${compraId}/confirm`);
+  const res = await api.post(`/pagos/${compraId}/confirm`, {}, { headers: { 'Content-Type': 'application/json' } });
   return res.data;
 }
 

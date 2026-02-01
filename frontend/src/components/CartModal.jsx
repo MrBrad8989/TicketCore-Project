@@ -38,7 +38,7 @@ const CartModal = ({ user, onClose, refreshCart }) => {
         // Si estamos logueados, preguntar si queremos autocompletar con los datos del usuario
         if (user) {
             const { isConfirmed } = await Swal.fire({
-                title: 'Rellenar con tus datos?',
+                title: '¿Rellenar con tus datos?',
                 text: '¿Deseas rellenar automáticamente los datos de los compradores con tu información de usuario?',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, rellenar',
