@@ -815,21 +815,27 @@ docker-compose down -v
 
 ### 🏠 Página Principal
 *Interfaz de bienvenida con eventos destacados y llamada a la acción*
+![img.png](public/img.png)
 
 ### 🔍 Buscador de Eventos
 *Motor de búsqueda con filtros dinámicos por ciudad, género, fecha y artista*
+![img_1.png](public/img_1.png)
 
 ### 🛒 Carrito de Compras
 *Vista detallada del carrito con cantidades ajustables y total actualizado*
+![img_2.png](public/img_2.png)
 
 ### 💳 Checkout y Datos de Comprador
 *Formulario para ingresar datos de cada titular de entrada*
+![img_3.png](public/img_3.png) ![img_4.png](public/img_4.png)
 
 ### 🎟️ Tickets Generados
 *PDF profesional con código QR, detalles del evento y datos del titular*
+![img_5.png](public/img_5.png)
 
 ### 🏢 Panel de Empresa
 *Vista "Mis Eventos" con opciones de crear, editar y eliminar*
+![img_6.png](public/img_6.png)
 
 ---
 
