@@ -3,10 +3,8 @@ import axios from 'axios';
 const api = axios.create({ baseURL: '/api' });
 
 export const eventService = {
-    // Búsqueda con filtros
     search: (params) => api.get('/eventos/buscar', { params }),
     getById: (id) => api.get(`/eventos/${id}`),
-    // Admin endpoints
     create: (data, user) => api.post('/eventos', data, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
     update: (id, data, user) => api.put(`/eventos/${id}`, data, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
     delete: (id, user) => api.delete(`/eventos/${id}`, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
@@ -15,18 +13,10 @@ export const eventService = {
 
 export const cartService = {
     getCart: (userId) => api.get(`/carrito/${userId}`),
-
-    add: (userId, eventoId, cantidad) =>
-        api.post(`/carrito/agregar?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
-
-    // Mantener antigua firma para compatibilidad (llama a checkoutFromCart internamente)
+    add: (userId, eventoId, cantidad) => api.post(`/carrito/agregar?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
     checkout: (userId, compradorInfo = null) => checkoutFromCart(userId, compradorInfo),
-
-    disminuir: (userId, eventoId, cantidad) =>
-        api.post(`/carrito/disminuir?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
-
-    eliminarLinea: (userId, lineaId) =>
-        api.delete(`/carrito/linea/${userId}/${lineaId}`)
+    disminuir: (userId, eventoId, cantidad) => api.post(`/carrito/disminuir?usuarioId=${userId}&eventoId=${eventoId}&cantidad=${cantidad}`),
+    eliminarLinea: (userId, lineaId) => api.delete(`/carrito/linea/${userId}/${lineaId}`)
 };
 
 export const authService = {
@@ -34,18 +24,15 @@ export const authService = {
     register: (data) => api.post('/auth/register', data)
 };
 
-// Funciones nuevas/actualizadas para integrar con el backend de compras
+// Envío JSON explícito en endpoints de compra para evitar 415 (Content-Type no soportado)
 export async function checkoutFromCart(usuarioId, compradorInfo = null) {
-  // Enviar siempre JSON para evitar Content-Type x-www-form-urlencoded
   const headers = { 'Content-Type': 'application/json' };
-  // Si compradorInfo es null, enviar un objeto vacío {} para forzar JSON
   const body = compradorInfo ? compradorInfo : {};
   const res = await api.post(`/compras/carrito/${usuarioId}`, body, { headers });
   return res.data;
 }
 
 export async function compraDirecta(payload) {
-  // Forzar JSON
   const res = await api.post('/compras/directo', payload, { headers: { 'Content-Type': 'application/json' } });
   return res.data;
 }

@@ -19,13 +19,12 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println("--- 🌍 Iniciando carga masiva de datos desde Ticketmaster ---");
+        System.out.println("--- Iniciando carga de datos desde Ticketmaster ---");
 
-        // Lista de ciudades para dar variedad al buscador
         List<String> ciudades = List.of("Madrid", "Barcelona", "Valencia", "Bilbao");
 
         for (String ciudad : ciudades) {
-            System.out.println("⬇️ Sincronizando eventos de: " + ciudad);
+            System.out.println("Sincronizando: " + ciudad);
             ticketmasterService.sincronizarEventos(ciudad);
         }
 

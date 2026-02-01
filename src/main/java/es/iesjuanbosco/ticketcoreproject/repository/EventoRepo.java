@@ -16,8 +16,8 @@ public interface EventoRepo extends JpaRepository<Evento, Long> {
 
     boolean existsByTicketmasterId(String ticketmasterId);
 
-    // 2. Búsqueda Normal (Respeta el orden de la paginación)
-    // Nota: He añadido "OR :ciudad = ''" para arreglar el bug de "Todas las ciudades"
+    // Consulta principal para búsqueda con filtros (ciudad, palabra clave, género, fecha)
+    // Se permite ciudad vacía/null como "Todas las ciudades".
     @Query("SELECT DISTINCT e FROM Evento e " +
             "LEFT JOIN e.recinto r " +
             "LEFT JOIN e.artistas a " +
@@ -32,7 +32,7 @@ public interface EventoRepo extends JpaRepository<Evento, Long> {
             @Param("genero") String genero,
             Pageable pageable);
 
-    // 3. Búsqueda ALEATORIA (Se usa cuando buscas en 'Todas las ciudades')
+    // Variante que devuelve resultados en orden aleatorio (útil para "todas las ciudades")
     @Query("SELECT DISTINCT e FROM Evento e " +
             "LEFT JOIN e.recinto r " +
             "LEFT JOIN e.artistas a " +

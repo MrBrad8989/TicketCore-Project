@@ -8,5 +8,5 @@ public class CompradorInfoDTO {
     private String apellido;
     private String email;
     private String documentoIdentificacion;
-    private String fechaNacimiento; // yyyy-MM-dd
+    private String fechaNacimiento; // formato: yyyy-MM-dd
 }

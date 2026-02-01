@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class CompraDirectaRequest {
-    private Long usuarioId; // opcional
-    private CompradorInfoDTO compradorInfo; // datos de facturación si aplica
+    private Long usuarioId; // opcional (guest purchases allowed)
+    private CompradorInfoDTO compradorInfo; // datos de facturación opcionales
     private List<LineaCompraInput> lineas;
 }

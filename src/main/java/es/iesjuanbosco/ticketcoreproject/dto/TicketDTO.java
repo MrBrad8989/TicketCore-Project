@@ -11,9 +11,9 @@ public class TicketDTO {
     private String tituloEvento;
     private String nombreUsuario;
 
-    // Datos del titular/beneficiario del ticket
+    // Datos del titular/beneficiario
     private String compradorNombre;
     private String compradorEmail;
     private String compradorDocumento;
-    private String compradorFechaNacimiento; // yyyy-MM-dd
+    private String compradorFechaNacimiento; // formato: yyyy-MM-dd
 }

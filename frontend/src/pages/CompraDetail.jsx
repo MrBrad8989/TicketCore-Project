@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-// Nota: no usamos compraService importado; hacemos fetch directo o usar las funciones exportadas desde services/api
-// import { compraService } from '../services/api';
 import DownloadTicketsButton from '../components/DownloadTicketsButton';
 
 export default function CompraDetail() {

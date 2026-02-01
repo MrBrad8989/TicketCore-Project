@@ -4,8 +4,7 @@ import lombok.Data;
 
 @Data
 public class CheckoutRequest {
-    private Long usuarioId; // nullable for guest
+    private Long usuarioId; // nullable para invitado
     private CompradorInfoDTO compradorInfo;
     private boolean usarCarrito = true;
-    // future: List<LineaDirectaDTO> lineas;
 }
