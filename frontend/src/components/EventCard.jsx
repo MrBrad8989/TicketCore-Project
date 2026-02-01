@@ -1,7 +1,7 @@
 import React from 'react';
-import { FaCalendarAlt, FaMapMarkerAlt, FaTrash } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaTrash, FaEdit } from 'react-icons/fa';
 
-const EventCard = ({ evento, onClick, isAdmin, onDelete }) => {
+const EventCard = ({ evento, onClick, isAdmin, onDelete, onEdit, user }) => {
     // Formateo seguro de fecha y precio
     const fecha = evento.fechaEvento ? new Date(evento.fechaEvento).toLocaleDateString() : 'Fecha por definir';
     const precio = evento.precio ? `${evento.precio} €` : 'Gratis';
@@ -11,6 +11,15 @@ const EventCard = ({ evento, onClick, isAdmin, onDelete }) => {
         e.stopPropagation(); // Evita abrir el modal al hacer click en borrar
         onDelete();
     };
+
+    // Manejador para editar sin activar el click de la carta
+    const handleEditClick = (e) => {
+        e.stopPropagation(); // Evita abrir el modal al hacer click en editar
+        if (onEdit) onEdit();
+    };
+
+    // Verificar si el usuario actual es creador del evento
+    const isCreator = user && evento.creadorId && user.id === evento.creadorId;
 
     return (
         <div
@@ -53,16 +62,27 @@ const EventCard = ({ evento, onClick, isAdmin, onDelete }) => {
                 </div>
             </div>
 
-            {/* Controles de Admin (Solo visibles si es admin) */}
-            {isAdmin && (
+            {/* Controles para Admin o Empresa Creadora */}
+            {(isAdmin || isCreator) && (
                 <div className="absolute top-2 left-2 flex gap-2">
-                    <button
-                        onClick={handleDeleteClick}
-                        className="bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"
-                        title="Borrar evento"
-                    >
-                        <FaTrash size={14} />
-                    </button>
+                    {isCreator && onEdit && (
+                        <button
+                            onClick={handleEditClick}
+                            className="bg-blue-600 text-white p-2 rounded-full shadow-lg hover:bg-blue-700 transition"
+                            title="Editar evento"
+                        >
+                            <FaEdit size={14} />
+                        </button>
+                    )}
+                    {(isAdmin || isCreator) && (
+                        <button
+                            onClick={handleDeleteClick}
+                            className="bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-700 transition"
+                            title="Borrar evento"
+                        >
+                            <FaTrash size={14} />
+                        </button>
+                    )}
                 </div>
             )}
         </div>
@@ -70,3 +90,4 @@ const EventCard = ({ evento, onClick, isAdmin, onDelete }) => {
 };
 
 export default EventCard;
+

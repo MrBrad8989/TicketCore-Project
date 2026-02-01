@@ -5,6 +5,7 @@ const api = axios.create({ baseURL: '/api' });
 export const eventService = {
     search: (params) => api.get('/eventos/buscar', { params }),
     getById: (id) => api.get(`/eventos/${id}`),
+    getMyEvents: (user) => api.get('/eventos/mis-eventos', { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
     create: (data, user) => api.post('/eventos', data, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
     update: (id, data, user) => api.put(`/eventos/${id}`, data, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),
     delete: (id, user) => api.delete(`/eventos/${id}`, { headers: user ? { 'X-User-Id': user.id, 'X-User-Rol': user.rol } : {} }),

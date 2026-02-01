@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 @Service
@@ -38,6 +39,71 @@ public class TicketmasterSyncService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Random random = new Random();
+
+    /**
+     * Genera un precio aleatorio realista para eventos según el género musical
+     */
+    private double generarPrecioAleatorio(String genero) {
+        // Rangos de precios según género (valores en euros)
+        double precioBase;
+        double variacion;
+
+        if (genero == null) genero = "General";
+
+        switch (genero.toLowerCase()) {
+            case "rock":
+            case "metal":
+            case "alternative":
+                precioBase = 35.0;
+                variacion = 25.0;
+                break;
+            case "pop":
+            case "dance":
+            case "electronic":
+                precioBase = 40.0;
+                variacion = 30.0;
+                break;
+            case "jazz":
+            case "blues":
+            case "classical":
+                precioBase = 30.0;
+                variacion = 20.0;
+                break;
+            case "hip-hop":
+            case "rap":
+            case "r&b":
+                precioBase = 38.0;
+                variacion = 27.0;
+                break;
+            case "country":
+            case "folk":
+                precioBase = 28.0;
+                variacion = 18.0;
+                break;
+            case "reggae":
+            case "latin":
+            case "world":
+                precioBase = 32.0;
+                variacion = 22.0;
+                break;
+            default:
+                precioBase = 35.0;
+                variacion = 25.0;
+        }
+
+        // Generar precio aleatorio dentro del rango
+        double precio = precioBase + (random.nextDouble() * variacion);
+
+        // Redondear a .99 o .50 para que parezca más realista
+        if (random.nextBoolean()) {
+            precio = Math.floor(precio) + 0.99;
+        } else {
+            precio = Math.floor(precio) + 0.50;
+        }
+
+        return Math.max(15.0, precio); // Mínimo 15€
+    }
 
     public void sincronizarEventos(String ciudad) {
         // 1. URL filtrada por Música y con tamaño 100 para tener margen de variedad
@@ -166,9 +232,19 @@ public class TicketmasterSyncService {
 
         JsonNode priceRanges = node.path("priceRanges");
         if (priceRanges.isArray() && priceRanges.size() > 0) {
-            evento.setPrecio(priceRanges.get(0).path("min").asDouble());
+            double precioMin = priceRanges.get(0).path("min").asDouble();
+            // Si el precio de la API es 0 o muy bajo, generar uno aleatorio
+            if (precioMin > 5.0) {
+                evento.setPrecio(precioMin);
+            } else {
+                // Obtener género del primer artista para precio realista
+                String genero = artistasEvento.isEmpty() ? "General" : artistasEvento.get(0).getGenero();
+                evento.setPrecio(generarPrecioAleatorio(genero));
+            }
         } else {
-            evento.setPrecio(0.0);
+            // No hay información de precio, generar basado en género
+            String genero = artistasEvento.isEmpty() ? "General" : artistasEvento.get(0).getGenero();
+            evento.setPrecio(generarPrecioAleatorio(genero));
         }
 
         JsonNode images = node.path("images");
@@ -181,5 +257,31 @@ public class TicketmasterSyncService {
 
         eventoRepo.save(evento);
         System.out.println("--> Importado evento: " + evento.getTitulo());
+    }
+
+    /**
+     * Actualiza los precios de todos los eventos que tengan precio 0 o muy bajo
+     * Útil para corregir datos ya importados
+     */
+    public void actualizarPreciosExistentes() {
+        List<Evento> eventosSinPrecio = eventoRepo.findAll().stream()
+                .filter(e -> e.getPrecio() == null || e.getPrecio() <= 5.0)
+                .toList();
+
+        System.out.println("Actualizando precios de " + eventosSinPrecio.size() + " eventos...");
+
+        for (Evento evento : eventosSinPrecio) {
+            String genero = "General";
+            if (evento.getArtistas() != null && !evento.getArtistas().isEmpty()) {
+                genero = evento.getArtistas().get(0).getGenero();
+            }
+
+            double nuevoPrecio = generarPrecioAleatorio(genero);
+            evento.setPrecio(nuevoPrecio);
+            eventoRepo.save(evento);
+            System.out.println("Precio actualizado para: " + evento.getTitulo() + " -> " + nuevoPrecio + "€");
+        }
+
+        System.out.println("Actualización de precios completada.");
     }
 }

@@ -29,5 +29,9 @@ public class DataLoader implements CommandLineRunner {
         }
 
         System.out.println("--- Carga inicial finalizada ---");
+
+        // Actualizar precios de eventos que tengan precio 0 o muy bajo
+        System.out.println("--- Actualizando precios de eventos existentes ---");
+        ticketmasterService.actualizarPreciosExistentes();
     }
 }

@@ -15,7 +15,8 @@ const CreateEvent = () => {
         imageUrl: '',
         maxEntradas: 100,
         descripcion: '',
-        genero: ''
+        genero: '',
+        ciudad: ''
     });
 
     const [generos, setGeneros] = useState([]);
@@ -46,7 +47,8 @@ const CreateEvent = () => {
             precio: parseFloat(form.precio) || 0,
             imageUrl: form.imageUrl,
             maxEntradas: parseInt(form.maxEntradas, 10) || 0,
-            descripcion: form.descripcion
+            descripcion: form.descripcion,
+            recinto: form.ciudad ? { ciudad: form.ciudad, nombre: 'Por definir', aforoMaximo: form.maxEntradas } : null
         };
 
         // Si el usuario es una empresa, añadimos un artista con el nombre de la empresa/usuario para que aparezca en la sección artistas
@@ -79,13 +81,22 @@ const CreateEvent = () => {
             <h2 className="text-2xl font-bold mb-4">Crear Evento</h2>
             <form onSubmit={handleSubmit} className="max-w-xl bg-white p-6 rounded shadow">
                 <label className="block mb-2 font-semibold">Título</label>
-                <input name="titulo" value={form.titulo} onChange={handleChange} className="w-full border p-2 rounded mb-4" />
+                <input name="titulo" value={form.titulo} onChange={handleChange} className="w-full border p-2 rounded mb-4" required />
+
+                <label className="block mb-2 font-semibold">Ciudad</label>
+                <select name="ciudad" value={form.ciudad} onChange={handleChange} className="w-full border p-2 rounded mb-4" required>
+                    <option value="">-- Seleccionar ciudad --</option>
+                    <option value="Madrid">Madrid</option>
+                    <option value="Barcelona">Barcelona</option>
+                    <option value="Valencia">Valencia</option>
+                    <option value="Bilbao">Bilbao</option>
+                </select>
 
                 <label className="block mb-2 font-semibold">Fecha</label>
-                <input type="date" name="fechaEvento" value={form.fechaEvento} onChange={handleChange} className="w-full border p-2 rounded mb-4" />
+                <input type="date" name="fechaEvento" value={form.fechaEvento} onChange={handleChange} className="w-full border p-2 rounded mb-4" required />
 
                 <label className="block mb-2 font-semibold">Precio</label>
-                <input name="precio" value={form.precio} onChange={handleChange} className="w-full border p-2 rounded mb-4" />
+                <input name="precio" value={form.precio} onChange={handleChange} className="w-full border p-2 rounded mb-4" required />
 
                 <label className="block mb-2 font-semibold">Imagen URL</label>
                 <input name="imageUrl" value={form.imageUrl} onChange={handleChange} className="w-full border p-2 rounded mb-4" />

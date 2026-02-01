@@ -110,6 +110,38 @@ const SearchPage = ({ onSelectEvent }) => {
         }
     };
 
+    const handleEdit = async (evento) => {
+        const { value: formValues } = await Swal.fire({
+            title: 'Editar Evento',
+            html: `
+                <input id="titulo" class="swal2-input" placeholder="Título" value="${evento.titulo || ''}">
+                <input id="precio" type="number" class="swal2-input" placeholder="Precio" value="${evento.precio || ''}">
+                <input id="fecha" type="date" class="swal2-input" value="${evento.fechaEvento ? evento.fechaEvento.split('T')[0] : ''}">
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                return {
+                    titulo: document.getElementById('titulo').value,
+                    precio: document.getElementById('precio').value,
+                    fechaEvento: document.getElementById('fecha').value ? `${document.getElementById('fecha').value}T00:00:00` : null
+                };
+            }
+        });
+
+        if (formValues) {
+            try {
+                await eventService.update(evento.id, formValues, user);
+                Swal.fire('Actualizado', 'Evento actualizado con éxito', 'success');
+                buscar();
+            } catch (err) {
+                Swal.fire('Error', err?.response?.data || 'No se pudo actualizar', 'error');
+            }
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 pb-10">
             <div className="bg-gradient-to-r from-blue-900 to-indigo-800 p-8 shadow-lg text-white">
@@ -117,7 +149,11 @@ const SearchPage = ({ onSelectEvent }) => {
                     <h2 className="text-2xl font-bold mb-4">Encuentra tu evento ideal</h2>
                     <div className="bg-white p-4 rounded-lg shadow-lg text-gray-800 grid grid-cols-1 md:grid-cols-5 gap-4">
 
-                        <select className="form-select border p-2 rounded w-full" onChange={e => updateFilter({ ciudad: e.target.value })}>
+                        <select
+                            className="form-select border p-2 rounded w-full"
+                            value={filters.ciudad}
+                            onChange={e => updateFilter({ ciudad: e.target.value })}
+                        >
                             <option value="">Todas las ciudades</option>
                             <option value="Madrid">Madrid</option>
                             <option value="Barcelona">Barcelona</option>
@@ -125,11 +161,25 @@ const SearchPage = ({ onSelectEvent }) => {
                             <option value="Bilbao">Bilbao</option>
                         </select>
 
-                        <input placeholder="Artista..." className="border p-2 rounded" onChange={e => updateFilter({ keyword: e.target.value })} />
+                        <input
+                            placeholder="Artista..."
+                            className="border p-2 rounded"
+                            value={filters.keyword}
+                            onChange={e => updateFilter({ keyword: e.target.value })}
+                        />
 
-                        <input type="date" className="border p-2 rounded" onChange={e => updateFilter({ fecha: e.target.value })} />
+                        <input
+                            type="date"
+                            className="border p-2 rounded"
+                            value={filters.fecha}
+                            onChange={e => updateFilter({ fecha: e.target.value })}
+                        />
 
-                        <select className="border p-2 rounded" onChange={e => updateFilter({ genero: e.target.value })}>
+                        <select
+                            className="border p-2 rounded"
+                            value={filters.genero}
+                            onChange={e => updateFilter({ genero: e.target.value })}
+                        >
                             <option value="">Todos los géneros</option>
                             {generos.map(g => <option key={g} value={g}>{g}</option>)}
                         </select>
@@ -153,7 +203,9 @@ const SearchPage = ({ onSelectEvent }) => {
                                 evento={ev}
                                 onClick={() => onSelectEvent(ev)}
                                 isAdmin={isAdmin}
+                                user={user}
                                 onDelete={() => handleDelete(ev.id)}
+                                onEdit={() => handleEdit(ev)}
                             />
                         ))}
                     </div>

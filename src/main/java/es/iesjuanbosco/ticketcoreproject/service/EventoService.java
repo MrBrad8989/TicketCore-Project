@@ -70,9 +70,22 @@ public class EventoService {
 
     public EventoDTO actualizarEvento(Long id, EventoDTO eventoDTO) {
         Evento evento = eventoRepo.findById(id).orElseThrow(() -> new RuntimeException("Evento no encontrado"));
-        evento.setTitulo(eventoDTO.getTitulo());
-        evento.setPrecio(eventoDTO.getPrecio());
-        if(eventoDTO.getFechaEvento() != null) evento.setFechaEvento(eventoDTO.getFechaEvento());
+
+        // Solo permitir actualización si el usuario es el creador o admin
+        if (eventoDTO.getCreadorId() != null && evento.getCreador() != null) {
+            if (!evento.getCreador().getId().equals(eventoDTO.getCreadorId())) {
+                throw new RuntimeException("No autorizado: solo el creador puede actualizar este evento");
+            }
+        }
+
+        if (eventoDTO.getTitulo() != null) evento.setTitulo(eventoDTO.getTitulo());
+        if (eventoDTO.getPrecio() != null) evento.setPrecio(eventoDTO.getPrecio());
+        if (eventoDTO.getFechaEvento() != null) evento.setFechaEvento(eventoDTO.getFechaEvento());
+        if (eventoDTO.getImageUrl() != null) evento.setImageUrl(eventoDTO.getImageUrl());
+        if (eventoDTO.getMaxEntradas() != null && evento.getRecinto() != null) {
+            evento.getRecinto().setAforoMaximo(eventoDTO.getMaxEntradas());
+        }
+
         return eventoMapper.toDTO(eventoRepo.save(evento));
     }
 
@@ -105,5 +118,12 @@ public class EventoService {
 
     public Optional<EventoDTO> obtenerEventoPorId(Long id) {
         return eventoRepo.findById(id).map(eventoMapper::toDTO);
+    }
+
+    public List<EventoDTO> obtenerEventosPorCreador(Long creadorId) {
+        List<Evento> eventos = eventoRepo.findAll().stream()
+                .filter(e -> e.getCreador() != null && e.getCreador().getId().equals(creadorId))
+                .collect(java.util.stream.Collectors.toList());
+        return eventos.stream().map(eventoMapper::toDTO).collect(java.util.stream.Collectors.toList());
     }
 }

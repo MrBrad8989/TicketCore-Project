@@ -19,7 +19,10 @@ const Navbar = ({ cartCount, onOpenCart, onOpenLogin }) => {
                     <Link to="/" className="hover:text-yellow-400 font-medium">Inicio</Link>
                     <Link to="/buscar" className="hover:text-yellow-400 font-medium">Buscador</Link>
                     {user?.rol === 'EMPRESA' && (
-                        <Link to="/crear-evento" className="hover:text-yellow-400 font-medium">Crear evento</Link>
+                        <>
+                            <Link to="/crear-evento" className="hover:text-yellow-400 font-medium">Crear evento</Link>
+                            <Link to="/mis-eventos" className="hover:text-yellow-400 font-medium">Mis eventos</Link>
+                        </>
                     )}
                 </div>
 

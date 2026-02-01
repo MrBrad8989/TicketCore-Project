@@ -11,7 +11,8 @@ import CartModal from './components/CartModal';
 import LoginModal from './components/LoginModal';
 import Home from './pages/Home';
 import CreateEvent from './pages/CreateEvent';
-import CompraDetail from './pages/CompraDetail'; // Asegúrate de que la ruta de importación sea correcta
+import MyEvents from './pages/MyEvents';
+import CompraDetail from './pages/CompraDetail';
 
 // Wrapper interno para poder usar useAuth
 const MainLayout = () => {
@@ -63,6 +64,7 @@ const MainLayout = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/buscar" element={<SearchPage onSelectEvent={setSelectedEvent} />} />
                 <Route path="/crear-evento" element={<CreateEvent />} />
+                <Route path="/mis-eventos" element={<MyEvents />} />
                 <Route path="/compras/:id" element={<CompraDetail />} />
             </Routes>
 
