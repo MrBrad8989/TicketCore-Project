@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaShoppingCart, FaTrash, FaCreditCard, FaTimes, FaMinus } from 'react-icons/fa';
 import { cartService, descargarPdf, compraDirecta, confirmPayment, descargarZip } from '../services/api';
 import Swal from 'sweetalert2';
+import { formatPrice } from '../utils/format';
 
 const CartModal = ({ user, onClose, refreshCart }) => {
     const [items, setItems] = useState([]);
@@ -288,12 +289,12 @@ const CartModal = ({ user, onClose, refreshCart }) => {
                                 <div className="flex-grow">
                                     <h4 className="font-bold text-gray-800 text-sm line-clamp-1">{item.evento.titulo}</h4>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        {item.cantidad} x {item.evento.precio} €
+                                        {item.cantidad} x {formatPrice(item.evento.precio)}
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end justify-between">
                   <span className="font-bold text-indigo-600">
-                    {(item.cantidad * item.evento.precio).toFixed(2)} €
+                    {formatPrice(item.cantidad * item.evento.precio)}
                   </span>
                                     <div className="flex gap-2 mt-2">
                                         <button onClick={() => decreaseItem(item)} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-sm">
@@ -315,7 +316,7 @@ const CartModal = ({ user, onClose, refreshCart }) => {
                     <div className="p-5 bg-gray-50 border-t border-gray-200">
                         <div className="flex justify-between items-center mb-4 text-lg">
                             <span className="font-semibold text-gray-600">Total:</span>
-                            <span className="font-bold text-2xl text-indigo-900">{total.toFixed(2)} €</span>
+                            <span className="font-bold text-2xl text-indigo-900">{formatPrice(total)}</span>
                         </div>
 
                         <button

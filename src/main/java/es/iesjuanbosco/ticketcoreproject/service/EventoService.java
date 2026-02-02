@@ -3,8 +3,10 @@ package es.iesjuanbosco.ticketcoreproject.service;
 import es.iesjuanbosco.ticketcoreproject.dto.EventoDTO;
 import es.iesjuanbosco.ticketcoreproject.mapper.EventoMapper;
 import es.iesjuanbosco.ticketcoreproject.model.Evento;
+import es.iesjuanbosco.ticketcoreproject.model.Recinto;
 import es.iesjuanbosco.ticketcoreproject.repository.EventoRepo;
 import es.iesjuanbosco.ticketcoreproject.repository.ArtistaRepo;
+import es.iesjuanbosco.ticketcoreproject.repository.RecintoRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,9 @@ public class EventoService {
     @Autowired
     private ArtistaRepo artistaRepo;
 
+    @Autowired
+    private RecintoRepo recintoRepo;
+
     public Page<EventoDTO> buscarEventos(String ciudad, String keyword, String genero, LocalDateTime fecha, Pageable pageable) {
         Page<Evento> eventos;
 
@@ -44,6 +49,31 @@ public class EventoService {
     // --- RESTO DE MÉTODOS CRUD (Mantén los que ya tenías: crear, actualizar, borrar) ---
     public EventoDTO crearEvento(EventoDTO eventoDTO) {
         Evento evento = eventoMapper.toEntity(eventoDTO);
+
+        // Persistir o reutilizar Recinto si viene en el DTO
+        if (eventoDTO.getRecinto() != null) {
+            String ciudad = eventoDTO.getRecinto().getCiudad();
+            String nombreRecinto = eventoDTO.getRecinto().getNombre();
+
+            // Buscar si ya existe un recinto con la misma ciudad
+            Recinto recintoExistente = recintoRepo.findAll().stream()
+                .filter(r -> r.getCiudad().equalsIgnoreCase(ciudad))
+                .findFirst()
+                .orElse(null);
+
+            if (recintoExistente != null) {
+                // Reutilizar recinto existente
+                evento.setRecinto(recintoExistente);
+            } else {
+                // Crear y guardar nuevo recinto
+                Recinto nuevoRecinto = new Recinto();
+                nuevoRecinto.setCiudad(ciudad);
+                nuevoRecinto.setNombre(nombreRecinto != null ? nombreRecinto : "Recinto " + ciudad);
+                nuevoRecinto.setAforoMaximo(eventoDTO.getMaxEntradas() != null ? eventoDTO.getMaxEntradas() : 1000);
+                evento.setRecinto(recintoRepo.save(nuevoRecinto));
+            }
+        }
+
         // Asociar artistas: si vienen nombres en DTO, crear o reutilizar Artistas
         if (eventoDTO.getArtistas() != null && !eventoDTO.getArtistas().isEmpty()) {
             List<es.iesjuanbosco.ticketcoreproject.model.Artista> artistas = new java.util.ArrayList<>();
@@ -56,13 +86,13 @@ public class EventoService {
                 } else {
                     es.iesjuanbosco.ticketcoreproject.model.Artista nuevo = new es.iesjuanbosco.ticketcoreproject.model.Artista();
                     nuevo.setNombre(nombre.trim());
-                    // si viene género lo podemos usar
                     if (aDto.getGenero() != null) nuevo.setGenero(aDto.getGenero());
                     artistas.add(artistaRepo.save(nuevo));
                 }
             }
             evento.setArtistas(artistas);
         }
+
         if (evento.getFechaEvento() == null) evento.setFechaEvento(LocalDateTime.now().plusDays(30));
         if (evento.getPrecio() == null) evento.setPrecio(0.0);
         return eventoMapper.toDTO(eventoRepo.save(evento));

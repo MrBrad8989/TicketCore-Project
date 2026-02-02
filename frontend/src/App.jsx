@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { cartService } from './services/api';
 import Swal from 'sweetalert2';
@@ -22,18 +22,21 @@ const MainLayout = () => {
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [cartCount, setCartCount] = useState(0);
 
-    // Actualizar contador del carrito
-    useEffect(() => {
-        if (user) fetchCartCount();
-    }, [user, isCartOpen]);
-
-    const fetchCartCount = async () => {
+    // Actualizar contador del carrito: fetchCartCount definido antes como useCallback
+    const fetchCartCount = useCallback(async () => {
         try {
+            if (!user) return;
             const { data } = await cartService.getCart(user.id);
             const count = data.lineas?.reduce((acc, l) => acc + l.cantidad, 0) || 0;
             setCartCount(count);
-        } catch (e) {}
-    };
+        } catch (e) {
+            console.warn('fetchCartCount error', e);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (user) fetchCartCount();
+    }, [user, isCartOpen, fetchCartCount]);
 
     const handleAddToCart = async (evento, cantidad) => {
         if (!user) {
@@ -48,6 +51,7 @@ const MainLayout = () => {
             setSelectedEvent(null);
             fetchCartCount();
         } catch (e) {
+            console.warn('addToCart error', e);
             Swal.fire('Error', 'No se pudo añadir (¿Sold Out?)', 'error');
         }
     };
@@ -77,16 +81,58 @@ const MainLayout = () => {
                 />
             )}
 
-            {isCartOpen && <CartModal onClose={() => setIsCartOpen(false)} user={user} refreshCart={fetchCartCount}/>}
-            {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} />}
+            {isCartOpen && <CartModal onClose={() => setIsCartOpen(false)} user={user} refreshCart={fetchCartCount}/>}            {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} />}
         </div>
     );
 };
 
+// Componente que envuelve MainLayout para controlar título y favicon según ruta
+function AppWrapper() {
+    const location = useLocation();
+
+    useEffect(() => {
+        // Determinar título según pathname y parámetros
+        const { pathname, search } = location;
+        const params = new URLSearchParams(search);
+        let title = 'TicketCore';
+
+        if (pathname === '/' || pathname === '') {
+            title = 'TicketCore - Inicio';
+        } else if (pathname.startsWith('/buscar')) {
+            const kw = params.get('keyword');
+            const fecha = params.get('fecha');
+            if (kw) title = `TicketCore - Buscar: ${kw}`;
+            else if (fecha) title = `TicketCore - Buscar (${fecha})`;
+            else title = 'TicketCore - Buscar';
+        } else if (pathname.startsWith('/crear-evento')) {
+            title = 'TicketCore - Crear evento';
+        } else if (pathname.startsWith('/mis-eventos')) {
+            title = 'TicketCore - Mis eventos';
+        } else if (pathname.startsWith('/compras')) {
+            title = 'TicketCore - Compra';
+        }
+
+        document.title = title;
+
+        // Actualizar favicon (usa favicon.svg del build/public)
+        try {
+            const link = document.querySelector("link[rel*='icon']");
+            if (link) {
+                // Si quieres cambiar el icono según ruta, puedes hacer lógica aquí.
+                link.href = '/favicon.svg';
+            }
+        } catch (e) {
+            console.warn('favicon update error', e);
+        }
+    }, [location]);
+
+    return <MainLayout />;
+}
+
 export default function App() {
     return (
         <AuthProvider>
-            <MainLayout />
+            <AppWrapper />
         </AuthProvider>
     );
 }

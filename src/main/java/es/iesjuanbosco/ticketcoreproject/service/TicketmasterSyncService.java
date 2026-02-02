@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -263,6 +264,7 @@ public class TicketmasterSyncService {
      * Actualiza los precios de todos los eventos que tengan precio 0 o muy bajo
      * Útil para corregir datos ya importados
      */
+    @Transactional
     public void actualizarPreciosExistentes() {
         List<Evento> eventosSinPrecio = eventoRepo.findAll().stream()
                 .filter(e -> e.getPrecio() == null || e.getPrecio() <= 5.0)
@@ -272,6 +274,7 @@ public class TicketmasterSyncService {
 
         for (Evento evento : eventosSinPrecio) {
             String genero = "General";
+            // acceder a artistas dentro de la transacción evita LazyInitializationException
             if (evento.getArtistas() != null && !evento.getArtistas().isEmpty()) {
                 genero = evento.getArtistas().get(0).getGenero();
             }

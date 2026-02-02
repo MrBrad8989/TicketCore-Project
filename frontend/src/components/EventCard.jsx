@@ -1,10 +1,11 @@
 import React from 'react';
 import { FaCalendarAlt, FaMapMarkerAlt, FaTrash, FaEdit } from 'react-icons/fa';
+import { formatPrice } from '../utils/format';
 
 const EventCard = ({ evento, onClick, isAdmin, onDelete, onEdit, user }) => {
     // Formateo seguro de fecha y precio
     const fecha = evento.fechaEvento ? new Date(evento.fechaEvento).toLocaleDateString() : 'Fecha por definir';
-    const precio = evento.precio ? `${evento.precio} €` : 'Gratis';
+    const precio = evento.precio ? formatPrice(evento.precio) : 'Gratis';
 
     // Manejador para borrar sin activar el click de la carta
     const handleDeleteClick = (e) => {
@@ -90,4 +91,3 @@ const EventCard = ({ evento, onClick, isAdmin, onDelete, onEdit, user }) => {
 };
 
 export default EventCard;
-

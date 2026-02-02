@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { eventService } from '../services/api';
 import Swal from 'sweetalert2';
 import { FaEdit, FaTrash, FaCalendarAlt, FaMapMarkerAlt, FaEuroSign } from 'react-icons/fa';
+import { formatPrice } from '../utils/format';
 
 const MyEvents = () => {
     const { user } = useAuth();
@@ -191,7 +192,7 @@ const MyEvents = () => {
 
                                         <div className="flex items-center text-gray-600">
                                             <FaEuroSign className="mr-2 text-green-500" />
-                                            <span className="font-bold">{evento.precio ? `${evento.precio}€` : 'Gratis'}</span>
+                                            <span className="font-bold">{evento.precio ? formatPrice(evento.precio) : 'Gratis'}</span>
                                         </div>
 
                                         <div className="flex items-center text-gray-600">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaCalendar, FaMapMarkerAlt, FaEuroSign } from 'react-icons/fa';
+import { formatPrice } from '../utils/format';
 
 const EventModal = ({ evento, onClose, onAddToCart }) => {
     const [qty, setQty] = useState(1);
@@ -18,7 +19,7 @@ const EventModal = ({ evento, onClose, onAddToCart }) => {
                         alt={evento.titulo}
                     />
                     <div className="absolute top-4 right-4 bg-yellow-500 text-black font-bold px-3 py-1 rounded-full shadow">
-                        {evento.precio} €
+                        {formatPrice(evento.precio)}
                     </div>
                 </div>
 
