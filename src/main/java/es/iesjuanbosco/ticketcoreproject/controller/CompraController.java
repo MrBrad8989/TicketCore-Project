@@ -9,6 +9,7 @@ import es.iesjuanbosco.ticketcoreproject.model.Compra;
 import es.iesjuanbosco.ticketcoreproject.model.Ticket;
 import es.iesjuanbosco.ticketcoreproject.repository.CompraRepo;
 import es.iesjuanbosco.ticketcoreproject.service.CompraService;
+import es.iesjuanbosco.ticketcoreproject.service.EmailService;
 import es.iesjuanbosco.ticketcoreproject.service.PdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -37,6 +39,9 @@ public class CompraController {
 
     @Autowired
     private CompraRepo compraRepo;
+
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping("/checkout")
     public ResponseEntity<CompraDTO> checkout(@RequestBody CheckoutRequest req) {
@@ -109,4 +114,36 @@ public class CompraController {
             throw new RuntimeException("Error generando ZIP: " + e.getMessage(), e);
         }
     }
+
+    @PostMapping("/{id}/enviar-email")
+    public ResponseEntity<?> enviarCompraPorEmail(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Compra compra = compraRepo.findById(id).orElseThrow(() -> new RuntimeException("Compra no encontrada: " + id));
+        var tickets = compra.getTickets();
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ZipOutputStream zos = new ZipOutputStream(baos)) {
+            int counter = 1;
+            for (Ticket t : tickets) {
+                byte[] pdf = pdfService.generarPdfTicket(t);
+                ZipEntry entry = new ZipEntry("ticket-" + counter + "-" + t.getId() + ".pdf");
+                zos.putNextEntry(entry);
+                zos.write(pdf);
+                zos.closeEntry();
+                counter++;
+            }
+            zos.finish();
+            byte[] zipBytes = baos.toByteArray();
+
+            String to = body.get("email");
+            if (to == null || to.isBlank()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Se requiere campo 'email'");
+
+            String subject = "Tus tickets - Compra " + compra.getReferenciaPago();
+            String text = "Adjuntamos los tickets de tu compra. Referencia: " + compra.getReferenciaPago();
+            emailService.sendEmailWithAttachment(to, subject, text, zipBytes, "compra-" + id + "-tickets.zip");
+
+            return ResponseEntity.ok().body("Email enviado a: " + to);
+        } catch (Exception e) {
+            throw new RuntimeException("Error generando o enviando ZIP: " + e.getMessage(), e);
+        }
+    }
+
 }

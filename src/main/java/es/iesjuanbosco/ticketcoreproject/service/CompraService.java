@@ -7,6 +7,8 @@ import es.iesjuanbosco.ticketcoreproject.exception.CarritoNotFoundException;
 import es.iesjuanbosco.ticketcoreproject.exception.SoldOutException;
 import es.iesjuanbosco.ticketcoreproject.model.*;
 import es.iesjuanbosco.ticketcoreproject.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class CompraService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CompraService.class);
 
     @Autowired
     private CarritoRepo carritoRepo;
@@ -39,6 +43,15 @@ public class CompraService {
 
     @Autowired
     private UsuarioRepo usuarioRepo;
+
+    @Autowired
+    private PdfService pdfService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private EmailTemplateService emailTemplateService;
 
     private CompradorEmbeddable mapDtoToEmbeddable(CompradorInfoDTO dto) {
         if (dto == null) return null;
@@ -234,7 +247,38 @@ public class CompraService {
                 }
 
                 ticket.setCompra(compra);
-                ticketRepo.save(ticket);
+                Ticket saved = ticketRepo.save(ticket);
+
+                // Generar PDF del ticket y enviarlo por correo si tenemos email
+                try {
+                    byte[] pdf = pdfService.generarPdfTicket(saved);
+                    String to = saved.getCompradorEmail() != null ? saved.getCompradorEmail() : (saved.getUsuario() != null ? saved.getUsuario().getEmail() : null);
+
+                    if (to != null && !to.isBlank()) {
+                        // Preparar datos para la plantilla
+                        String compradorNombre = saved.getCompradorNombre() != null ? saved.getCompradorNombre() : "Usuario";
+                        String eventoTitulo = evento.getTitulo() != null ? evento.getTitulo() : "Evento sin título";
+                        String fechaEvento = emailTemplateService.formatearFecha(evento.getFechaEvento());
+                        String recinto = evento.getRecinto() != null ? evento.getRecinto().getNombre() : null;
+                        String ciudad = evento.getRecinto() != null ? evento.getRecinto().getCiudad() : null;
+                        String codigoTicket = saved.getCodigo();
+                        String referenciaPago = compra.getReferenciaPago();
+
+                        // Generar HTML desde plantilla
+                        String htmlContent = emailTemplateService.generarEmailTicket(
+                            compradorNombre, eventoTitulo, fechaEvento, recinto, ciudad, codigoTicket, referenciaPago
+                        );
+
+                        String subject = "🎫 Tu entrada para " + eventoTitulo;
+                        emailService.sendEmailWithAttachment(to, subject, htmlContent, pdf, "ticket-" + codigoTicket + ".pdf");
+
+                        logger.info("✅ Ticket enviado por email a: {} para evento: {}", to, eventoTitulo);
+                    }
+                } catch (Exception ex) {
+                    // No bloqueamos la confirmación si falla el envío; registramos
+                    logger.warn("⚠️ No se pudo enviar email para ticket {}: {}", saved.getId(), ex.getMessage());
+                }
+
             }
 
             total = total.add(lc.getSubtotal());
